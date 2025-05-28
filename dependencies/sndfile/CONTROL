@@ -1,0 +1,22 @@
+Package: libsndfile
+Version: 1.2.2
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: c75a43ef24ba40fb47de14eb60314874ffc21b473a249bfd50e248613828e80a
+Description: A library for reading and writing audio files
+Default-Features: external-libs, mpeg
+
+Package: libsndfile
+Feature: external-libs
+Depends: libflac, libvorbis, opus
+Architecture: x64-windows
+Multi-Arch: same
+Description: Enable FLAC, Vorbis, and Opus codecs
+
+Package: libsndfile
+Feature: mpeg
+Depends: mp3lame, mpg123
+Architecture: x64-windows
+Multi-Arch: same
+Description: Enable MPEG codecs
