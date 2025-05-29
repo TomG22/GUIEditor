@@ -6,19 +6,19 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "GuiListener.h"
+#include "WindowListener.h"
 #include <thread>
 #include <vector>
 
-class Gui {
+class Window {
 public:
 	GLFWwindow* window;
-    std::vector<GuiListener*> listeners;
+    std::vector<WindowListener*> listeners;
 
-	Gui();
+	Window();
 
-    void RegisterListener(GuiListener*);
-	int startGuiLoop();
+    void RegisterListener(WindowListener* listener);
+	int startWindowLoop();
     bool isKeyDown(int keyCode);
     void handleKey(int key, int scancode, int action, int mods);
 

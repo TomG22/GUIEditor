@@ -1,18 +1,18 @@
-#include "Gui.h"
+#include "Window.h"
 #include "Renderer.h"
 #include "VertexBufferLayout.h"
 #include "Texture.h"
 
-Gui::Gui()
+Window::Window()
     : window(nullptr) {
 
 }
 
-void Gui::RegisterListener(GuiListener* listener) {
+void Window::RegisterListener(WindowListener* listener) {
     listeners.push_back(listener);
 }
 
-bool Gui::isKeyDown(int keyCode) {
+bool Window::isKeyDown(int keyCode) {
     if (!window) return false;
 
 	return glfwGetKey(window, keyCode) != 0;
@@ -22,14 +22,14 @@ void glfwErrorCallback(int error, const char* description) {
     fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
 }
 
-int Gui::startGuiLoop() {
+int Window::startWindowLoop() {
 // WINDOW CODE //
     // Set the debug callback for all GLFW errors
     glfwSetErrorCallback(glfwErrorCallback);
 
     // Check if GLFW initialization errors
     if (!glfwInit()) {
-        fprintf(stderr, "Gui ERROR: GLFW initialization failed\n");
+        fprintf(stderr, "Window ERROR: GLFW initialization failed\n");
         return 1;
     }
 
@@ -37,12 +37,13 @@ int Gui::startGuiLoop() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
-    window = glfwCreateWindow(1920, 1080, "GLFW Window", glfwGetPrimaryMonitor(), nullptr);
+    window = glfwCreateWindow(100, 200, "GLFW Window", nullptr, nullptr);
 
     // Check if window creation errors
     if (window == nullptr) {
-        fprintf(stderr, "Gui ERROR: GLFW window initialization failed\n");
+        fprintf(stderr, "Window ERROR: GLFW window initialization failed\n");
         glfwTerminate();
         return 1;
     }
@@ -58,12 +59,12 @@ int Gui::startGuiLoop() {
     glfwSetWindowUserPointer(window, this);
 
     // Set the callbacks for the window
-    glfwSetKeyCallback(window, Gui::keyCallback);
+    glfwSetKeyCallback(window, Window::keyCallback);
     glfwSetErrorCallback(glfwErrorCallback);
 
     // Check if GLAD initialization errors
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        fprintf(stderr, "Gui ERROR: GLAD initialization failed\n");
+        fprintf(stderr, "Window ERROR: GLAD initialization failed\n");
         glfwDestroyWindow(window);
         glfwTerminate();
         return 1;
@@ -170,21 +171,21 @@ int Gui::startGuiLoop() {
     return 0;
 }
 
-void Gui::handleKey(int key, int scancode, int action, int mods) {
+void Window::handleKey(int key, int scancode, int action, int mods) {
     for (auto* listener : listeners) {
         listener->OnKey(key, scancode, action, mods);
     }
 }
 
-void Gui::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     // Get a reference to the gui for our key callback
-    Gui* gui = static_cast<Gui*>(glfwGetWindowUserPointer(window));
+    Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (gui) {
         // Call the non-static keyCallback member function
         gui->handleKey(key, scancode, action, mods);
     }
 }
 
-void Gui::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }

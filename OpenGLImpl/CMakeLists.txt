@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
-
-set(CMAKE_C_COMPILER gcc)
-set(CMAKE_CXX_COMPILER c++)
+cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -12,9 +9,9 @@ set(GLFW_BUILD_X11 ON)
 
 project(GUIEditor)
 
-add_executable(${PROJECT_NAME}
+add_library(${PROJECT_NAME}
     src/main.cpp
-    src/Gui.cpp
+    src/Window.cpp
 
     src/Camera.cpp
     src/IndexBuffer.cpp
@@ -26,6 +23,7 @@ add_executable(${PROJECT_NAME}
     src/VertexBuffer.cpp
 
     dependencies/glad/src/glad.c
+    dependencies/glad/include/glad/glad.h
     dependencies/stb/stb_image.cpp
 )
 
