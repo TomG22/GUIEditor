@@ -17,12 +17,14 @@ include(FetchContent)
 
 FetchContent_Declare(
     glfw
-    URL https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.WIN64.zip
-    URL_HASH SHA256=54efa829400f2a0537f742b2b3bdd74e437bb4f2f048e4b7d3c5557d11a611e6
+    URL https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip
+    URL_HASH SHA256=b5ec004b2712fd08e8861dc271428f048775200a2df719ccf575143ba749a3e9
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
 FetchContent_Populate(glfw)
+
+add_subdirectory(${glfw_SOURCE_DIR})
 
 
 add_executable(${PROJECT_NAME}
@@ -49,6 +51,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    ${glfw_SOURCE_DIR}/lib-vc2022/glfw3.lib
+    glfw
     opengl32
 )

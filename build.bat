@@ -39,7 +39,7 @@ if not exist build (
     mkdir build
 )
 
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build
 
 goto :eof
 
@@ -49,7 +49,7 @@ REM CMake build step
 REM ----------------------------------------
 :build
 
-cmake --build build --config Release
+cmake --build build
 
 goto :eof
 
