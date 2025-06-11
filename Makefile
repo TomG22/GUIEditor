@@ -1,5 +1,4 @@
 PROJ_NAME := GUIEditor
-MY_TOOLCHAIN := toolchain.cmake
 
 ### Unix makefile targets ###
 
@@ -10,7 +9,7 @@ all: $(PROJ_NAME)
 configure:
 	mkdir -p build
 	cmake -S . -B build \
-		-DCMAKE_TOOLCHAIN_FILE=$(MY_TOOLCHAIN)
+		-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake
 
 
 # CMake build step

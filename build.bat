@@ -39,7 +39,7 @@ if not exist build (
     mkdir build
 )
 
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake
 
 goto :eof
 
