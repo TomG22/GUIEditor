@@ -1,7 +1,4 @@
 #include "Renderer.h"
-#include <iostream>
-#include "glm.hpp"
-#include "gtc/matrix_transform.hpp"
 
 void GLClearError() {
     while (glGetError() != GL_NO_ERROR);

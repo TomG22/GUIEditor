@@ -20,28 +20,31 @@ add_subdirectory(${glfw_SOURCE_DIR})
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    #src/Window.cpp
-    #src/Camera.cpp
-    #src/IndexBuffer.cpp
-    #src/Mesh.cpp
-    #src/Renderer.cpp
-    #src/Shader.cpp
-    #src/Texture.cpp
-    #src/VertexArray.cpp
-    #src/VertexBuffer.cpp
+    src/Window.cpp
+    src/Camera.cpp
+    src/IndexBuffer.cpp
+    src/Mesh.cpp
+    src/Renderer.cpp
+    src/Shader.cpp
+    src/Texture.cpp
+    src/VertexArray.cpp
+    src/VertexBuffer.cpp
 
     dependencies/glad/src/glad.c
     dependencies/stb/stb_image.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glm
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/dependencies
+    ${CMAKE_SOURCE_DIR}/dependencies/glad/include
+
     ${glfw_SOURCE_DIR}/include
 )
 
+find_package(OpenGL REQUIRED)
+
 target_link_libraries(${PROJECT_NAME} PUBLIC
     glfw
-    opengl32
+    OpenGL::GL
 )
