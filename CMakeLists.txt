@@ -34,6 +34,7 @@ add_executable(${PROJECT_NAME}
     dependencies/stb/stb_image.cpp
 )
 
+
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/dependencies
@@ -42,7 +43,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${glfw_SOURCE_DIR}/include
 )
 
+
 find_package(OpenGL REQUIRED)
+
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     glfw
