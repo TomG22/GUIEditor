@@ -29,6 +29,7 @@ add_executable(${PROJECT_NAME}
     src/Texture.cpp
     src/VertexArray.cpp
     src/VertexBuffer.cpp
+    src/Frame.cpp
 
     dependencies/glad/src/glad.c
     dependencies/stb/stb_image.cpp

@@ -1,10 +1,11 @@
 #include "Mesh.h"
 
-Mesh::Mesh(VertexArray& va, IndexBuffer& ib, std::vector<Texture>& textures) 
-	: va(va), ib(ib), textures(textures) {
+Mesh::Mesh(VertexArray& va, IndexBuffer& ib, std::vector<Texture>& textures)
+    : va(va), ib(ib), textures(textures) {
 
 }
 
+/*
 void Mesh::Draw(Shader& shader,
 				Camera& camera,
 				glm::mat4 uMatrix,
@@ -46,3 +47,4 @@ void Mesh::Draw(Shader& shader,
 
 	glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, 0);
 }
+*/

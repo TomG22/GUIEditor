@@ -1,0 +1,27 @@
+PROJ_NAME := GUIEditor
+
+
+###  Windows makefile targets ###
+
+all: $(PROJ_NAME)
+
+
+# CMake configuration step
+configure:
+	cmd.exe /C "build.bat configure"
+
+
+# CMake build step
+$(PROJ_NAME):
+	cmd.exe /C "build.bat build"
+
+
+rebuild:
+	cmd.exe /C "build.bat rebuild"
+
+
+clean:
+	cmd.exe /C "build.bat clean"
+
+
+.PHONY: all configure $(PROJ_NAME) rebuild clean

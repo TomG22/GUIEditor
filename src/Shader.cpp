@@ -1,13 +1,20 @@
-#include "Shader.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
+
+#include "Shader.h"
 #include "Renderer.h"
 
-Shader::Shader(const std::string& filepath): m_FilePath(filepath), m_RendererID(0) {
-    ShaderProgramSource source = ParseShader(filepath);
-    m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
+Shader::Shader(const std::string& filepath)
+    : m_FilePath(filepath), m_RendererID(0) {
+    try {
+        ShaderProgramSource source = ParseShader(filepath);
+        m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Shader ERROR: " << e.what() << std::endl;
+        std::exit(1);
+    }
 }
 
 Shader::~Shader() {
@@ -17,6 +24,11 @@ Shader::~Shader() {
 ShaderProgramSource Shader::ParseShader(const std::string& filepath) {
     std::ifstream stream(filepath);
 
+    if (!stream.is_open()) {
+        throw std::runtime_error("Failed to open shader file: " + filepath);
+        return {"", ""};
+    }
+
     enum class ShaderType {
         NONE = -1, VERTEX = 0, FRAGMENT = 1
     };
@@ -24,7 +36,7 @@ ShaderProgramSource Shader::ParseShader(const std::string& filepath) {
     std::string line;
     std::stringstream ss[2];
     ShaderType type = ShaderType::NONE;
-    while (getline(stream, line)) {    
+    while (getline(stream, line)) {
         if (line.find("#shader") != std::string::npos) {
             if (line.find("vertex") != std::string::npos) {
                 type = ShaderType::VERTEX;
@@ -44,10 +56,10 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
     const char* src = source.c_str();
     GLCall(glShaderSource(id, 1, &src, nullptr));
     GLCall(glCompileShader(id));
-    int result;
+    int result = 0;
     GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
     if (result == GL_FALSE) {
-        int length;
+        int length = 0;
         GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
         char* message = (char*)alloca(length * sizeof(char));
         GLCall(glGetShaderInfoLog(id, length, &length, message));
@@ -68,6 +80,17 @@ unsigned int Shader::CreateShader(const std::string& VertexShader, const std::st
     GLCall(glAttachShader(program, fs));
     GLCall(glLinkProgram(program));
     GLCall(glValidateProgram(program));
+
+    int success;
+    GLCall(glGetProgramiv(program, GL_LINK_STATUS, &success));
+    if (!success) {
+        int logLength;
+        GLCall(glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength));
+        char* log = (char*)alloca(logLength * sizeof(char));
+        GLCall(glGetProgramInfoLog(program, logLength, &logLength, log));
+        std::cerr << "Shader ERROR: Shader program linking failed: " << log << std::endl;
+        return 0;
+    }
 
     GLCall(glDeleteShader(vs));
     GLCall(glDeleteShader(fs));
@@ -91,6 +114,10 @@ void Shader::SetUniform1f(const std::string& name, float value) {
     GLCall(glUniform1f(GetUniformLocation(name), value));
 }
 
+void Shader::SetUniform2f(const std::string& name, float v0, float v1) {
+    GLCall(glUniform2f(GetUniformLocation(name), v0, v1));
+}
+
 void Shader::SetUniform3f(const std::string& name, float v0, float v1, float v2) {
     GLCall(glUniform3f(GetUniformLocation(name), v0, v1, v2));
 }
@@ -107,7 +134,8 @@ int Shader::GetUniformLocation(const std::string& name) {
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
         return m_UniformLocationCache[name];
 
-    GLCall(int location = glGetUniformLocation(m_RendererID, name.c_str()));
+    int location = -1;
+    GLCall(location = glGetUniformLocation(m_RendererID, name.c_str()));
     if (location == -1) {
         std::cout << "Warning: uniform '" << name << "' doesn't exist!" << std::endl;
     }
