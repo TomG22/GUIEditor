@@ -11,11 +11,11 @@ void Frame::createBackground() {
     glm::vec2 bottomRight = {topRight.x, bottomLeft.y};
     glm::vec2 topLeft = {bottomLeft.x, topRight.y};
 
-    Vertex2D vertices[] = {
-        {bottomLeft,     bgColor},
-        {bottomRight,    bgColor},
-        {topRight,       bgColor},
-        {topLeft,        bgColor}
+    glm::vec2 vertices[] = {
+        bottomLeft,
+        bottomRight,
+        topRight,
+        topLeft
     };
 
     unsigned int indices[] = {
@@ -27,7 +27,7 @@ void Frame::createBackground() {
     VertexBuffer* vb = new VertexBuffer(vertices, sizeof(vertices));
 
     VertexBufferLayout* layout = new VertexBufferLayout;
-    layout->Push<Vertex2D>(1);
+    layout->Push<glm::vec2>(1);
     va->AddBuffer(*vb, *layout);
 
     IndexBuffer* ib = new IndexBuffer(indices, 6);
