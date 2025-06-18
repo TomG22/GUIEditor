@@ -65,6 +65,7 @@ void Window::startWindowLoop() {
     // Set the callbacks for the window
     glfwSetKeyCallback(window, Window::keyCallback);
     glfwSetErrorCallback(glfwErrorCallback);
+    glfwSetCursorPosCallback(window, Window::cursorPosCallback);
 
     // Check if GLAD initialization errors
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
@@ -76,9 +77,9 @@ void Window::startWindowLoop() {
     GLCall(glEnable(GL_BLEND));
     GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    Shader* shader2D = new Shader("../res/shaders/2DVertexColor.shader");
+    shader2D = new Shader("../res/shaders/2DVertexColor.shader");
 
-    glm::mat4 proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
+    proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
 
     shader2D->Bind();
     shader2D->SetUniformMat4f("u_Proj", proj);
@@ -127,16 +128,39 @@ void Window::handleKey(int key, int scancode, int action, int mods) {
 }
 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    // Get a reference to the gui for our key callback
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (gui) {
-        // Call the non-static keyCallback member function
-        gui->handleKey(key, scancode, action, mods);
+    if (gui) gui->handleKey(key, scancode, action, mods);
+}
+
+void Window::handleMouseMove(double x, double y) {
+    for (auto* listener : listeners) {
+        listener->OnMouseMove(x, y);
     }
+
+    printf("(%lf, %lf)\n", x, y);
+}
+
+void Window::cursorPosCallback(GLFWwindow* window, double x, double y) {
+    Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (gui) gui->handleMouseMove(x, y);
+}
+
+void Window::handleResize(int width, int height) {
+    width = width;
+    height = height;
+    proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
+
+    shader2D->Bind();
+    shader2D->SetUniformMat4f("u_Proj", proj);
+    shader2D->Unbind();
+
+    GLCall(glViewport(0, 0, width, height));
 }
 
 void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
+    Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (gui) gui->handleResize(width, height);
+
 }
 
 void Window::postToRenderThread(std::function<void()> command) {

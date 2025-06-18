@@ -17,6 +17,18 @@ FetchContent_Populate(glfw)
 
 add_subdirectory(${glfw_SOURCE_DIR})
 
+# Fetch the freetype dependency
+FetchContent_Declare(
+    freetype
+    URL https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.xz
+    URL_HASH SHA256=0550350666d427c74daeb85d5ac7bb353acba5f76956395995311a9c6f063289
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+FetchContent_Populate(freetype)
+
+add_subdirectory(${freetype_SOURCE_DIR})
+
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -42,6 +54,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_SOURCE_DIR}/dependencies/glad/include
 
     ${glfw_SOURCE_DIR}/include
+    ${freetype_SOURCE_DIR}/include
 )
 
 
@@ -50,5 +63,6 @@ find_package(OpenGL REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     glfw
+    freetype
     OpenGL::GL
 )
