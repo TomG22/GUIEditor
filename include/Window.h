@@ -19,9 +19,10 @@ private:
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 public:
+    int width, height;
     GLFWwindow* window;
     std::vector<WindowListener*> listeners;
-    std::vector<Frame*> frames;
+    std::vector<Frame> frames;
 
     std::mutex cmdQueueMut;
     std::queue<std::function<void()>> cmdQueue;
@@ -34,7 +35,7 @@ public:
     bool isKeyDown(int keyCode);
     void handleKey(int key, int scancode, int action, int mods);
 
-    void addFrame(Frame* frame);
+    void addFrame(Frame frame);
 
     void postToRenderThread(std::function<void()> command);
 };

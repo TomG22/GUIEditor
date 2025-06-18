@@ -16,13 +16,15 @@ Window::Window() : window(nullptr) {
     } catch (const std::runtime_error&) {
         std::cerr << "GLFW Initialization failed" << std::endl;
     }
+
+    width = 1440, height = 700;
 }
 
 void Window::RegisterListener(WindowListener* listener) {
     listeners.push_back(listener);
 }
 
-void Window::addFrame(Frame* frame) {
+void Window::addFrame(Frame frame) {
     frames.push_back(frame);
 }
 
@@ -42,7 +44,7 @@ void Window::initGLFW() {
 }
 
 void Window::startWindowLoop() {
-    window = glfwCreateWindow(1440, 700, "GLFW Window", nullptr, nullptr);
+    window = glfwCreateWindow(width, height, "GLFW Window", nullptr, nullptr);
 
     // Check if window creation errors
     if (window == nullptr) {
@@ -75,9 +77,12 @@ void Window::startWindowLoop() {
     GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     Shader* shader2D = new Shader("../res/shaders/2DVertexColor.shader");
-    //shader2D->Bind();
-    //shader2D->SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
-    //shader2D->Unbind();
+
+    glm::mat4 proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
+
+    shader2D->Bind();
+    shader2D->SetUniformMat4f("u_Proj", proj);
+    shader2D->Unbind();
 
     Renderer renderer;
     renderer.clearColor(0.3f, 0.9f, 0.9f, 1.0f);
@@ -94,12 +99,8 @@ void Window::startWindowLoop() {
             cmdQueue.pop();
         }
 
-        float time = static_cast<float>(glfwGetTime());
-        shader2D->Bind();
-        shader2D->SetUniform1f("u_Time", time);
-
-        for (Frame* frame : frames) {
-            renderer.Draw(frame->background->va, frame->background->ib, *shader2D);
+        for (Frame frame : frames) {
+            renderer.Draw(frame.bgMesh->va, frame.bgMesh->ib, *shader2D);
         }
 
         GLCall(glfwSwapBuffers(window));

@@ -2,18 +2,13 @@
 
 #include "Mesh.h"
 
-struct Vec2 {
-    float x;
-    float y;
-};
-
 class Frame {
-private:
-    Vec2 bottomLeft;
-    Vec2 topRight;
-
 public:
-    Frame();
+    glm::vec2 bottomLeft;
+    glm::vec2 topRight;
+    glm::vec4 bgColor;
+    Mesh* bgMesh;
 
-    Mesh* background;
+    Frame();
+    void createBackground();
 };
