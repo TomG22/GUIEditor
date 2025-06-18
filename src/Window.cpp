@@ -76,7 +76,7 @@ void Window::startWindowLoop() {
     GLCall(glEnable(GL_BLEND));
     GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    Shader* shader2D = new Shader("../res/shaders/2DBaseColor.shader");
+    Shader* shader2D = new Shader("../res/shaders/2DVertexColor.shader");
 
     glm::mat4 proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
 
@@ -100,8 +100,6 @@ void Window::startWindowLoop() {
         }
 
         for (Frame frame : frames) {
-            shader2D->Bind();
-            shader2D->SetUniformVec4f("u_Color", frame.bgColor);
             renderer.Draw(frame.bgMesh->va, frame.bgMesh->ib, *shader2D);
         }
 
