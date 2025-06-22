@@ -1,31 +1,36 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "GLDebug.h"
 #include "Window.h"
 #include "Renderer.h"
-#include "VertexBufferLayout.h"
-#include "Texture.h"
 
 void glfwErrorCallback(int error, const char* description) {
     fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
 }
 
-Window::Window() : window(nullptr) {
+Window::Window()
+    : window(nullptr),
+      shader2D(nullptr),
+      width(1440),
+      height(700),
+      renderer() {
     try {
         initGLFW();
     } catch (const std::runtime_error&) {
         std::cerr << "GLFW Initialization failed" << std::endl;
     }
-
-    width = 1440, height = 700;
 }
 
-void Window::RegisterListener(WindowListener* listener) {
+void Window::RegisterListener(GuiListener* listener) {
     listeners.push_back(listener);
 }
 
-void Window::addFrame(Frame frame) {
-    frames.push_back(frame);
+Widget* Window::makeWidget() {
+    Widget* widget = new Widget();
+    widgets.push_back(widget);
+    listeners.push_back(widget);
+    return widget;
 }
 
 void Window::initGLFW() {
@@ -66,6 +71,7 @@ void Window::startWindowLoop() {
     glfwSetKeyCallback(window, Window::keyCallback);
     glfwSetErrorCallback(glfwErrorCallback);
     glfwSetCursorPosCallback(window, Window::cursorPosCallback);
+    glfwSetMouseButtonCallback(window, Window::mouseButtonCallback);
 
     // Check if GLAD initialization errors
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
@@ -85,13 +91,13 @@ void Window::startWindowLoop() {
     shader2D->SetUniformMat4f("u_Proj", proj);
     shader2D->Unbind();
 
-    Renderer renderer;
-    renderer.clearColor(0.3f, 0.9f, 0.9f, 1.0f);
+    renderer = new Renderer();
+    renderer->clearColor(0.3f, 0.9f, 0.9f, 1.0f);
 
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-        renderer.Clear();
+        renderer->Clear();
 
         // Fetch from the command queue before rendering
         std::lock_guard<std::mutex> lock(cmdQueueMut);
@@ -100,8 +106,10 @@ void Window::startWindowLoop() {
             cmdQueue.pop();
         }
 
-        for (Frame frame : frames) {
-            renderer.Draw(frame.bgMesh->va, frame.bgMesh->ib, *shader2D);
+        for (Widget* widget : widgets) {
+            if (widget->bgMesh != nullptr) {
+                renderer->Draw(*(widget->bgMesh), *shader2D);
+            }
         }
 
         GLCall(glfwSwapBuffers(window));
@@ -123,7 +131,7 @@ bool Window::isKeyDown(int keyCode) {
 
 void Window::handleKey(int key, int scancode, int action, int mods) {
     for (auto* listener : listeners) {
-        listener->OnKey(key, scancode, action, mods);
+        listener->onKey(key, scancode, action, mods);
     }
 }
 
@@ -132,22 +140,68 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
     if (gui) gui->handleKey(key, scancode, action, mods);
 }
 
-void Window::handleMouseMove(double x, double y) {
-    for (auto* listener : listeners) {
-        listener->OnMouseMove(x, y);
+void Window::handleMouseMove(float x, float y) {
+    for (GuiListener* listener : listeners) {
+        listener->onMouseMove(x, height - y);
     }
-
-    printf("(%lf, %lf)\n", x, y);
 }
 
 void Window::cursorPosCallback(GLFWwindow* window, double x, double y) {
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (gui) gui->handleMouseMove(x, y);
+    if (gui) gui->handleMouseMove(static_cast<float>(x), static_cast<float>(y));
+}
+
+void Window::handleMouseButton(int button, int action, int mods) {
+    double xDouble, yDouble;
+    glfwGetCursorPos(window, &xDouble, &yDouble);
+    float x = static_cast<float>(xDouble);
+    float y = height - static_cast<float>(yDouble);
+
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+        for (GuiListener* listener : listeners) {
+            listener->onMouseDownLeft(x, y, mods);
+        }
+    }
+
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) {
+        for (GuiListener* listener : listeners) {
+            listener->onMouseDownRight(x, y, mods);
+        }
+    }
+
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_MIDDLE) {
+        for (GuiListener* listener : listeners) {
+            listener->onMouseDownMiddle(x, y, mods);
+        }
+    }
+
+    if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+        for (GuiListener* listener : listeners) {
+            listener->onMouseUpLeft(x, y, mods);
+        }
+    }
+
+    if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_RIGHT) {
+        for (GuiListener* listener : listeners) {
+            listener->onMouseUpRight(x, y, mods);
+        }
+    }
+
+    if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_MIDDLE) {
+        for (GuiListener* listener : listeners) {
+            listener->onMouseUpMiddle(x, y, mods);
+        }
+    }
+}
+
+void Window::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (gui) gui->handleMouseButton(button, action, mods);
 }
 
 void Window::handleResize(int width, int height) {
-    width = width;
-    height = height;
+    this->width = width;
+    this->height = height;
     proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
 
     shader2D->Bind();

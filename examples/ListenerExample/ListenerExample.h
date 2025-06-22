@@ -5,5 +5,5 @@
 class ListenerExample : public WindowListener {
 public:
     ListenerExample();
-    void OnKey(int key, int scancode, int action, int mods) override;
+    void onKey(int key, int scancode, int action, int mods) override;
 };

@@ -2,10 +2,12 @@
 
 #include <glm/glm.hpp>
 #include <stdexcept>
-
 #include <vector>
-#include "Renderer.h"
-#include "VertexBuffer.h"
+
+struct Vertex2D {
+    glm::vec2 position;
+    glm::vec4 color;
+};
 
 struct VertexBufferElement {
     unsigned int type;

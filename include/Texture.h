@@ -3,8 +3,6 @@
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 
-#include "Renderer.h"
-
 class Texture {
 public:
 	GLuint ID;

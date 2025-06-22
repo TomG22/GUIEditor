@@ -32,16 +32,15 @@ add_subdirectory(${freetype_SOURCE_DIR})
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    src/Window.cpp
-    src/Camera.cpp
+    src/GLDebug.cpp
     src/IndexBuffer.cpp
     src/Mesh.cpp
     src/Renderer.cpp
     src/Shader.cpp
-    src/Texture.cpp
     src/VertexArray.cpp
     src/VertexBuffer.cpp
-    src/Frame.cpp
+    src/Widget.cpp
+    src/Window.cpp
 
     dependencies/glad/src/glad.c
     dependencies/stb/stb_image.cpp

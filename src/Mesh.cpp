@@ -1,9 +1,25 @@
+#include <utility>
+
 #include "Mesh.h"
 
-Mesh::Mesh(VertexArray& va, IndexBuffer& ib, std::vector<Texture>& textures)
-    : va(va), ib(ib), textures(textures) {
-
+Mesh::Mesh(VertexArray* va, VertexBuffer* vb, IndexBuffer* ib)
+    : va(va), vb(vb), ib(ib) {
+    printf("[Mesh] vb constructed: %p\n", vb);
 }
+
+void Mesh::UpdateVertices(const void* data, unsigned int size, unsigned int offset) {
+    vb->UpdateData(data, size, offset);
+}
+
+/*
+const VertexArray& Mesh::GetVertexArray() const {
+    return *va;
+}
+
+const IndexBuffer& Mesh::GetIndexBuffer() const {
+    return *ib;
+}
+*/
 
 /*
 void Mesh::Draw(Shader& shader,

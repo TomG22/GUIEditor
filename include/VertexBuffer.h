@@ -1,11 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glad/glad.h>
 
-struct Vertex2D {
-    glm::vec2 position;
-    glm::vec4 color;
-};
+#include "VertexBufferLayout.h"
 
 class VertexBuffer {
 	private:
@@ -16,4 +14,6 @@ class VertexBuffer {
 
 		void Bind() const;
 		void Unbind() const;
+
+        void UpdateData(const void* data, unsigned int size, unsigned int offset = 0);
 };

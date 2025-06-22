@@ -1,11 +1,15 @@
 #include <iostream>
 
+#include "GLDebug.h"
 #include "VertexArray.h"
 #include "VertexBufferLayout.h"
-#include "Renderer.h"
 
 VertexArray::VertexArray() {
 	GLCall(glGenVertexArrays(1, &m_RendererID));
+
+    if (m_RendererID == 0) {
+        throw std::runtime_error("OpenGL Error: Failed to generate vertex array");
+    }
 }
 
 VertexArray::~VertexArray() {

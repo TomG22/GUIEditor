@@ -3,8 +3,8 @@
 #include <string>
 #include <sstream>
 
+#include "GLDebug.h"
 #include "Shader.h"
-#include "Renderer.h"
 
 Shader::Shader(const std::string& filepath)
     : m_FilePath(filepath), m_RendererID(0) {
