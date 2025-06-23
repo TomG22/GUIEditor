@@ -1,4 +1,19 @@
-#include <glm/glm.hpp>
+class CursorState {
+    bool mouseDown;
+};
+
+enum HoverState {
+   None,
+   Inside,
+   TopLeft,
+   TopRight,
+   BottomRight,
+   BottomLeft,
+   Top,
+   Right,
+   Bottom,
+   Left,
+};
 
 enum TransformState {
     Idle,

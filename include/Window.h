@@ -18,13 +18,29 @@
 
 class Window {
 private:
-    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-    static void cursorPosCallback(GLFWwindow* window, double x, double y);
-    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+    static void keyCallback(GLFWwindow *window,
+                            int key, int scancode, int action, int mods);
+
+    static void cursorPosCallback(GLFWwindow* window,
+                                  double x, double y);
+
+    static void mouseButtonCallback(GLFWwindow* window,
+                                    int button, int action, int mods);
+
+    static void framebufferSizeCallback(GLFWwindow* window,
+                                        int width, int height);
 
 public:
     GLFWwindow* window;
+    GLFWcursor* arrowCursor;
+    GLFWcursor* hResizeCursor;
+    GLFWcursor* vResizeCursor;
+    GLFWcursor* resizeNESWCursor;
+    GLFWcursor* resizeNWSECursor;
+    GLFWcursor* resizeAllCursor;
+
+    HoverState hoverState;
+
     Renderer* renderer;
     Shader* shader2D;
 
@@ -45,6 +61,16 @@ public:
     Widget* makeWidget();
     void initGLFW();
     void startWindowLoop();
+
+    void useArrowCursor();
+    void useHResizeCursor();
+    void useVResizeCursor();
+    void useResizeNESWCursor();
+    void useResizeNWSECursor();
+    void useResizeAllCursor();
+
+    void updateCursor(Widget* widget);
+
     bool isKeyDown(int keyCode);
     void handleKey(int key, int scancode, int action, int mods);
     void handleMouseMove(float x, float y);

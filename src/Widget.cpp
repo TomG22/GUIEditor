@@ -4,6 +4,192 @@
 #include "VertexArray.h"
 #include "IndexBuffer.h"
 
+bool eqWithTol(float a, float b) {
+    return std::abs(a - b) <= 5.0f;
+}
+
+bool Widget::onInside(float x, float y) {
+    return x >= bottomLeft.x && x <= topRight.x &&
+           y >= bottomLeft.y && y <= topRight.y;
+}
+
+bool Widget::onTopLeft(float x, float y) {
+    return eqWithTol(x, topLeft.x) && eqWithTol(y, topLeft.y);
+}
+
+bool Widget::onTopRight(float x, float y) {
+    return eqWithTol(x, topRight.x) && eqWithTol(y, topRight.y);
+}
+
+bool Widget::onBottomRight(float x, float y) {
+    return eqWithTol(x, bottomRight.x) && eqWithTol(y, bottomRight.y);
+}
+
+bool Widget::onBottomLeft(float x, float y) {
+    return eqWithTol(x, bottomLeft.x) && eqWithTol(y, bottomLeft.y);
+}
+
+bool Widget::onTop(float x, float y) {
+    return eqWithTol(y, topLeft.y);
+}
+
+bool Widget::onRight(float x, float y) {
+    return eqWithTol(x, topRight.x);
+}
+
+bool Widget::onBottom(float x, float y) {
+    return eqWithTol(y, bottomRight.y);
+}
+
+bool Widget::onLeft(float x, float y) {
+    return eqWithTol(x, bottomLeft.x);
+}
+
+void Widget::applyTransform(float x, float y, float dx, float dy) {
+    switch (transformState) {
+        case TransformState::Idle:
+            break;
+
+        case TransformState::Move:
+            topLeft.x += dx;
+            topLeft.y += dy;
+            topRight.x += dx;
+            topRight.y += dy;
+            bottomRight.x += dx;
+            bottomRight.y += dy;
+            bottomLeft.x += dx;
+            bottomLeft.y += dy;
+            break;
+
+        case TransformState::ResizeTop:
+            topLeft.y = y;
+            topRight.y = y;
+            break;
+        case TransformState::ResizeRight:
+            topRight.x = x;
+            bottomRight.x = x;
+            break;
+        case TransformState::ResizeBottom:
+            bottomLeft.y = y;
+            bottomRight.y = y;
+            break;
+        case TransformState::ResizeLeft:
+            topLeft.x = x;
+            bottomLeft.x = x;
+            break;
+
+        case TransformState::ResizeTopLeft:
+            topLeft.x = x;
+            topLeft.y = y;
+            bottomLeft.x = x;
+            topRight.y = y;
+            break;
+        case TransformState::ResizeTopRight:
+            topRight.x = x;
+            topRight.y = y;
+            topLeft.y = y;
+            bottomRight.x = x;
+            break;
+        case TransformState::ResizeBottomRight:
+            bottomRight.x = x;
+            bottomRight.y = y;
+            topRight.x = x;
+            bottomLeft.y = y;
+            break;
+        case TransformState::ResizeBottomLeft:
+            bottomLeft.x = x;
+            bottomLeft.y = y;
+            bottomRight.y = y;
+            topLeft.x = x;
+            break;
+    }
+}
+
+void Widget::updateTransformState(float x, float y) {
+    if (onTopLeft(x, y)) {
+        transformState = TransformState::ResizeTopLeft;
+        vec2TransformCache = topLeft;
+    }
+    else if (onTopRight(x, y)) {
+        transformState = TransformState::ResizeTopRight;
+        vec2TransformCache = topRight;
+    }
+    else if (onBottomRight(x, y)) {
+        transformState = TransformState::ResizeBottomRight;
+        vec2TransformCache = bottomRight;
+    }
+    else if (onBottomLeft(x, y)) {
+        transformState = TransformState::ResizeBottomLeft;
+        vec2TransformCache = bottomRight;
+    }
+    else if (onTop(x, y)) {
+        transformState = TransformState::ResizeTop;
+        scalarTransformCache = topLeft.y;
+    }
+    else if (onRight(x, y)) {
+        transformState = TransformState::ResizeRight;
+        scalarTransformCache = topRight.x;
+    }
+    else if (onBottom(x, y)) {
+        transformState = TransformState::ResizeBottom;
+        scalarTransformCache = bottomRight.y;
+    }
+    else if (onLeft(x, y)) {
+        transformState = TransformState::ResizeLeft;
+        scalarTransformCache = bottomLeft.x;
+    }
+    else if (onInside(x, y)) {
+        transformState = TransformState::Move;
+        vec4TransformCache = glm::vec4(bottomLeft.x, bottomLeft.y,
+                                       topRight.x, topRight.y);
+    }
+}
+
+void Widget::updateHoverState(float x, float y) {
+    HoverState prevHoverState = hoverState;
+
+    if (onTopLeft(x, y)) {
+        hoverState = HoverState::TopLeft;
+    }
+    else if (onTopRight(x, y)) {
+        hoverState = HoverState::TopRight;
+    }
+    else if (onBottomRight(x, y)) {
+        hoverState = HoverState::BottomRight;
+    }
+    else if (onBottomLeft(x, y)) {
+        hoverState = HoverState::BottomLeft;
+    }
+    else if (onTop(x, y)) {
+        hoverState = HoverState::Top;
+    }
+    else if (onRight(x, y)) {
+        hoverState = HoverState::Right;
+    }
+    else if (onBottom(x, y)) {
+        hoverState = HoverState::Bottom;
+    }
+    else if (onLeft(x, y)) {
+        hoverState = HoverState::Left;
+    }
+    else if (onInside(x, y)) {
+        hoverState = HoverState::Inside;
+    }
+    else {
+        hoverState = HoverState::None;
+    }
+
+    if (prevHoverState == HoverState::None && hoverState != HoverState::None) {
+        onMouseEnter();
+    }
+    else if (prevHoverState != HoverState::None &&
+             hoverState == HoverState::None) {
+        onMouseLeave();
+    }
+
+}
+
+
 Widget::Widget()
     : topLeft(0.0f),
       topRight(0.0f),
@@ -13,9 +199,11 @@ Widget::Widget()
       bgMesh(nullptr),
       cursorX(0.0f),
       cursorY(0.0f),
-      isHovering(false),
-      isResizable(true),
-      isDraggable(true),
+      canMove(true),
+      canResizeLeft(true),
+      canResizeRight(true),
+      canResizeBottom(true),
+      canResizeTop(true),
       transformState(TransformState::Idle),
       scalarTransformCache(0.0f),
       vec2TransformCache(0.0f),
@@ -98,87 +286,25 @@ void Widget::onMouseMove(float x, float y) {
     float dx = x - cursorX;
     float dy = y - cursorY;
 
-    switch (transformState) {
-        case TransformState::Idle:
-            break;
+    applyTransform(x, y, dx, dy);
 
-        case TransformState::Move:
-            topLeft.x += dx;
-            topLeft.y += dy;
-            topRight.x += dx;
-            topRight.y += dy;
-            bottomRight.x += dx;
-            bottomRight.y += dy;
-            bottomLeft.x += dx;
-            bottomLeft.y += dy;
-            break;
-
-        case TransformState::ResizeTop:
-            topLeft.y = y;
-            topRight.y = y;
-            break;
-        case TransformState::ResizeRight:
-            topRight.x = x;
-            bottomRight.x = x;
-            break;
-        case TransformState::ResizeBottom:
-            bottomLeft.y = y;
-            bottomRight.y = y;
-            break;
-        case TransformState::ResizeLeft:
-            topLeft.x = x;
-            bottomLeft.x = x;
-            break;
-
-        case TransformState::ResizeTopLeft:
-            topLeft.x = x;
-            topLeft.y = y;
-            bottomLeft.x = x;
-            topRight.y = y;
-            break;
-        case TransformState::ResizeTopRight:
-            topRight.x = x;
-            topRight.y = y;
-            topLeft.y = y;
-            bottomRight.x = x;
-            break;
-        case TransformState::ResizeBottomRight:
-            bottomRight.x = x;
-            bottomRight.y = y;
-            topRight.x = x;
-            bottomLeft.y = y;
-            break;
-        case TransformState::ResizeBottomLeft:
-            bottomLeft.x = x;
-            bottomLeft.y = y;
-            bottomRight.y = y;
-            topLeft.x = x;
-            break;
-    }
-
-    printf("isHovering: %d, (%f, %f)\n", isHovering, x, y);
-    if (isHovering == false && x >= bottomLeft.x && x <= topRight.x &&
-        y >= bottomLeft.y && y <= topRight.y) {
-        onMouseEnter();
-
-    } else if (isHovering == true && !(x >= bottomLeft.x && x <= topRight.x &&
-        y >= bottomLeft.y && y <= topRight.y)) {
-        onMouseLeave();
-    }
-
-    for (GuiListener* listener : listeners) {
-        listener->onMouseMove(x, y);
-    }
+    updateHoverState(x, y);
 
     updateGeometry();
+
+    // If not hovering, send the signal to the widget's children
+    if (hoverState == HoverState::None) {
+        for (GuiListener* listener : listeners) {
+            listener->onMouseMove(x, y);
+        }
+    }
 
     cursorX = x;
     cursorY = y;
 }
 
 void Widget::onMouseEnter() {
-    printf("mouse ENTERED window\n");
-    isHovering = true;
+    printf("mouse ENTERED widget\n");
 
     for (GuiListener* listener : listeners) {
             listener->onMouseEnter();
@@ -186,83 +312,26 @@ void Widget::onMouseEnter() {
 }
 
 void Widget::onMouseLeave() {
-    printf("mouse LEFT window\n");
-    isHovering = false;
+    printf("mouse LEFT widget\n");
 
     for (GuiListener* listener : listeners) {
             listener->onMouseLeave();
     }
 }
 
-bool eqWithTol(float a, float b, float tolerance) {
-    return std::abs(a - b) <= tolerance;
-}
-
 void Widget::onMouseDownLeft(float x, float y, int mods) {
     printf("mouse down window (%f, %f)\n", x, y);
 
-    if (x > bottomLeft.x && x < topRight.x &&
-        y > bottomLeft.y && y < topRight.y) {
-        if (isDraggable) {
-            transformState = TransformState::Move;
-            vec4TransformCache = glm::vec4(bottomLeft.x, bottomLeft.y, topRight.x, topRight.y);
-        }
+    updateTransformState(x, y);
 
+    if (onInside(x, y)) {
         for (GuiListener* listener : listeners) {
-            listener->onMouseDownRight(x, y, mods);
+            listener->onMouseDownLeft(x, y, mods);
         }
     }
 
     cursorX = x;
     cursorY = y;
-
-    if (isResizable && eqWithTol(x, topLeft.x, 5.0f) && eqWithTol(y, topLeft.y, 5.0f)) {
-        transformState = TransformState::ResizeTopLeft;
-        vec2TransformCache = topLeft;
-        return;
-    }
-
-    if (isResizable && x == topRight.x && y == topRight.y) {
-        transformState = TransformState::ResizeTopRight;
-        vec2TransformCache = topRight;
-        return;
-    }
-
-    if (isResizable && x == bottomRight.x && y == bottomRight.y) {
-        transformState = TransformState::ResizeBottomRight;
-        vec2TransformCache = bottomRight;
-        return;
-    }
-
-    if (isResizable && x == bottomLeft.x && y == bottomLeft.y) {
-        transformState = TransformState::ResizeBottomLeft;
-        vec2TransformCache = bottomRight;
-        return;
-    }
-
-    if (isResizable && y == topLeft.y) {
-        transformState = TransformState::ResizeTop;
-        scalarTransformCache = topLeft.y;
-        return;
-    }
-
-    if (isResizable && x == topRight.x) {
-        transformState = TransformState::ResizeRight;
-        scalarTransformCache = topRight.x;
-        return;
-    }
-
-    if (isResizable && y == bottomRight.y) {
-        transformState = TransformState::ResizeBottom;
-        scalarTransformCache = bottomRight.y;
-        return;
-    }
-
-    if (isResizable && x == bottomLeft.x) {
-        transformState = TransformState::ResizeLeft;
-        scalarTransformCache = bottomLeft.x;
-        return;
-    }
 }
 
 void Widget::onMouseUpLeft(float x, float y, int mods) {

@@ -4,7 +4,6 @@
 
 Mesh::Mesh(VertexArray* va, VertexBuffer* vb, IndexBuffer* ib)
     : va(va), vb(vb), ib(ib) {
-    printf("[Mesh] vb constructed: %p\n", vb);
 }
 
 void Mesh::UpdateVertices(const void* data, unsigned int size, unsigned int offset) {

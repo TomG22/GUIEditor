@@ -32,6 +32,7 @@ add_subdirectory(${freetype_SOURCE_DIR})
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+
     src/GLDebug.cpp
     src/IndexBuffer.cpp
     src/Mesh.cpp
