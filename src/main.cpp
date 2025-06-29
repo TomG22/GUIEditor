@@ -9,11 +9,23 @@ int main() {
     Window* window = new Window();
 
 
-    Widget* widget = window->makeWidget();
+    //Widget* relWidget = window->makeWidget();
+    Widget* absWidget = window->makeWidget();
+    absWidget->setNotResizable();
+    absWidget->setMoveable();
+    absWidget->showHoverTips();
+    absWidget->bgColor = {0.5f, 0.5f, 0.5f, 1.0f};
     window->postToRenderThread([=]() {
-        widget->setSize({100.0f, 100.0f}, {300.0f, 300.0f});
-        widget->bgColor = {0.5f, 0.5f, 0.5f, 1.0f};
-        widget->createBackground();
+        //relWidget->createBackground();
+
+        //relWidget->setRelPos(0.5f, 0.5f);
+        //relWidget->setRelSize(0.5f, 0.5f);
+        //relWidget->bgColor = {0.9f, 0.5f, 0.5f, 1.0f};
+
+        absWidget->setAbsTransform({0.0f, 0.0f}, {300.0f, 300.0f});
+        absWidget->createBackground();
+        //absWidget->onKey(...);
+
     });
 
 

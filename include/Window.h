@@ -39,7 +39,8 @@ public:
     GLFWcursor* resizeNWSECursor;
     GLFWcursor* resizeAllCursor;
 
-    HoverState hoverState;
+    RectPos hoverState;
+    Widget* hoveredWidget;
 
     Renderer* renderer;
     Shader* shader2D;
@@ -71,10 +72,9 @@ public:
 
     void updateCursor(Widget* widget);
 
-    bool isKeyDown(int keyCode);
-    void handleKey(int key, int scancode, int action, int mods);
+    void handleKey(int key, int action, int mods);
     void handleMouseMove(float x, float y);
-    void handleMouseButton(int button, int action, int mods);
+    void handleMouseButton(int action, MouseButtonType type);
     void handleResize(int width, int height);
 
     void addWidget(Widget* widget);

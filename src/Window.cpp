@@ -4,6 +4,7 @@
 #include "GLDebug.h"
 #include "Window.h"
 #include "Renderer.h"
+#include "GLFWTypeConv.h"
 
 void glfwErrorCallback(int error, const char* description) {
     fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
@@ -12,6 +13,8 @@ void glfwErrorCallback(int error, const char* description) {
 Window::Window()
     : window(nullptr),
       shader2D(nullptr),
+      hoverState(RectPos::None),
+      hoveredWidget(nullptr),
       width(1440),
       height(700),
       renderer() {
@@ -27,9 +30,8 @@ void Window::RegisterListener(GuiListener* listener) {
 }
 
 Widget* Window::makeWidget() {
-    Widget* widget = new Widget();
+    Widget* widget = new Widget(this);
     widgets.push_back(widget);
-    listeners.push_back(widget);
     return widget;
 }
 
@@ -49,44 +51,39 @@ void Window::initGLFW() {
 }
 
 void Window::updateCursor(Widget* widget) {
-    if (widget->hoverState == HoverState::Inside && widget->canMove) {
-        useResizeAllCursor();
+    switch (widget->hoverState) {
+        case RectPos::Inside:
+            useResizeAllCursor();
+            break;
+        case RectPos::TopLeft:
+            useResizeNWSECursor();
+            break;
+        case RectPos::TopRight:
+            useResizeNESWCursor();
+            break;
+        case RectPos::BottomRight:
+            useResizeNWSECursor();
+            break;
+        case RectPos::BottomLeft:
+            useResizeNESWCursor();
+            break;
+        case RectPos::Top:
+            useVResizeCursor();
+            break;
+        case RectPos::Right:
+            useHResizeCursor();
+            break;
+        case RectPos::Bottom:
+            useVResizeCursor();
+            break;
+        case RectPos::Left:
+            useHResizeCursor();
+            break;
+        default:
+            useArrowCursor();
     }
-    else if (widget->hoverState == HoverState::TopLeft &&
-             widget->canResizeTop && widget->canResizeLeft) {
-        useResizeNWSECursor();
-    }
-    else if (widget->hoverState == HoverState::TopRight &&
-             widget->canResizeTop && widget->canResizeRight) {
-        useResizeNESWCursor();
-    }
-    else if (widget->hoverState == HoverState::BottomRight &&
-             widget->canResizeBottom && widget->canResizeRight) {
-        useResizeNWSECursor();
-    }
-    else if (widget->hoverState == HoverState::BottomLeft &&
-             widget->canResizeBottom && widget->canResizeLeft) {
-        useResizeNESWCursor();
-    }
-    else if (widget->hoverState == HoverState::Top &&
-             widget->canResizeTop) {
-        useVResizeCursor();
-    }
-    else if (widget->hoverState == HoverState::Right &&
-             widget->canResizeRight) {
-        useHResizeCursor();
-    }
-    else if (widget->hoverState == HoverState::Bottom &&
-             widget->canResizeBottom) {
-        useVResizeCursor();
-    }
-    else if (widget->hoverState == HoverState::Left &&
-             widget->canResizeLeft) {
-        useHResizeCursor();
-    }
-    else {
-        useArrowCursor();
-    }
+
+    hoverState = widget->hoverState;
 }
 
 
@@ -132,12 +129,11 @@ void Window::startWindowLoop() {
     resizeNWSECursor = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
     resizeAllCursor = glfwCreateStandardCursor(GLFW_RESIZE_ALL_CURSOR);
 
-    glfwSetCursor(window, arrowCursor);
+    useArrowCursor();
+
+    proj = glm::ortho(0.0f, width * 1.0f, height * 1.0f, 0.0f, -1.0f, 1.0f);
 
     shader2D = new Shader("../res/shaders/2DVertexColor.shader");
-
-    proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
-
     shader2D->Bind();
     shader2D->SetUniformMat4f("u_Proj", proj);
     shader2D->Unbind();
@@ -145,8 +141,7 @@ void Window::startWindowLoop() {
     renderer = new Renderer();
     renderer->clearColor(0.3f, 0.9f, 0.9f, 1.0f);
 
-    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-           !glfwWindowShouldClose(window)) {
+    while (glfwGetKey(window, GLFW_KEY_X) != GLFW_PRESS && !glfwWindowShouldClose(window)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         renderer->Clear();
@@ -202,28 +197,50 @@ void Window::useResizeAllCursor() {
     glfwSetCursor(window, resizeAllCursor);
 }
 
-bool Window::isKeyDown(int keyCode) {
-    if (!window)
-        return false;
-
-    return glfwGetKey(window, keyCode) != 0;
-}
-
-void Window::handleKey(int key, int scancode, int action, int mods) {
+void Window::handleKey(int key, int action, int mods) {
     for (auto* listener : listeners) {
-        listener->onKey(key, scancode, action, mods);
+        if (action == GLFW_PRESS && listener->regKeyDown) {
+            listener->onKeyDown(convGLFWKey(key), convGLFWMods(mods));
+        } else if (action == GLFW_RELEASE && listener->regKeyUp) {
+            listener->onKeyUp(convGLFWKey(key), convGLFWMods(mods));
+        }
     }
 }
 
 void Window::keyCallback(GLFWwindow* window,
                          int key, int scancode, int action, int mods) {
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    gui->handleKey(key, scancode, action, mods);
+    gui->handleKey(key, action, mods);
 }
 
 void Window::handleMouseMove(float x, float y) {
+    Widget* prevHitWidget = hoveredWidget;
+    hoveredWidget = Widget::hitTest(widgets, x, y);
+
+    if (prevHitWidget && prevHitWidget->regMouseLeave &&
+        prevHitWidget->transformState == TransformState::Idle &&
+        hoveredWidget != prevHitWidget) {
+        prevHitWidget->onMouseLeave();
+    }
+
+    if (prevHitWidget && prevHitWidget->regMouseHover &&
+        prevHitWidget->transformState != TransformState::Idle) {
+        prevHitWidget->onMouseHover(x, y);
+        hoveredWidget = prevHitWidget;  // Preserve if mid-transform
+    } else {
+        if (hoveredWidget && hoveredWidget->regMouseEnter && hoveredWidget != prevHitWidget) {
+            hoveredWidget->onMouseEnter();
+        }
+
+        if (hoveredWidget && hoveredWidget->regMouseHover) {
+            hoveredWidget->onMouseHover(x, y);
+        }
+    }
+
     for (GuiListener* listener : listeners) {
-        listener->onMouseMove(x, height - y);
+        if (listener->regMouseMove) {
+            listener->onMouseMove(x, y);
+        }
     }
 }
 
@@ -233,45 +250,33 @@ void Window::cursorPosCallback(GLFWwindow* window,
     gui->handleMouseMove(static_cast<float>(x), static_cast<float>(y));
 }
 
-void Window::handleMouseButton(int button, int action, int mods) {
+void Window::handleMouseButton(int action, MouseButtonType type) {
     double xDouble, yDouble;
     glfwGetCursorPos(window, &xDouble, &yDouble);
     float x = static_cast<float>(xDouble);
-    float y = height - static_cast<float>(yDouble);
+    float y = static_cast<float>(yDouble);
 
-    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
-        for (GuiListener* listener : listeners) {
-            listener->onMouseDownLeft(x, y, mods);
+    if (action == GLFW_PRESS) {
+        Widget* hitWidget = Widget::hitTest(widgets, x, y);
+        if (hitWidget && hitWidget->regMouseDown) {
+            hitWidget->onMouseDown(x, y, type);
         }
-    }
 
-    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) {
         for (GuiListener* listener : listeners) {
-            listener->onMouseDownRight(x, y, mods);
+            if (listener->regMouseDown) {
+                listener->onMouseDown(x, y, type);
+            }
         }
-    }
-
-    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_MIDDLE) {
-        for (GuiListener* listener : listeners) {
-            listener->onMouseDownMiddle(x, y, mods);
+    } else if (action == GLFW_RELEASE) {
+        Widget* hitWidget = Widget::hitTest(widgets, x, y);
+        if (hitWidget && hitWidget->regMouseUp) {
+            hitWidget->onMouseUp(x, y, type);
         }
-    }
 
-    if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
         for (GuiListener* listener : listeners) {
-            listener->onMouseUpLeft(x, y, mods);
-        }
-    }
-
-    if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_RIGHT) {
-        for (GuiListener* listener : listeners) {
-            listener->onMouseUpRight(x, y, mods);
-        }
-    }
-
-    if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_MIDDLE) {
-        for (GuiListener* listener : listeners) {
-            listener->onMouseUpMiddle(x, y, mods);
+            if (listener->regMouseUp) {
+                listener->onMouseUp(x, y, type);
+            }
         }
     }
 }
@@ -279,13 +284,17 @@ void Window::handleMouseButton(int button, int action, int mods) {
 void Window::mouseButtonCallback(GLFWwindow* window,
                                  int button, int action, int mods) {
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (gui) gui->handleMouseButton(button, action, mods);
+
+    MouseButtonType type = convGLFWMouseType(button);
+
+    if (gui) gui->handleMouseButton(action, type);
 }
 
 void Window::handleResize(int width, int height) {
     this->width = width;
     this->height = height;
-    proj = glm::ortho(0.0f, width * 1.0f, 0.0f, height * 1.0f, -1.0f, 1.0f);
+
+    proj = glm::ortho(0.0f, width * 1.0f, height * 1.0f, 0.0f, -1.0f, 1.0f);
 
     shader2D->Bind();
     shader2D->SetUniformMat4f("u_Proj", proj);

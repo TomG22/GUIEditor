@@ -4,11 +4,18 @@
 #include <glm/glm.hpp>
 
 #include "GuiListener.h"
-#include "GuiState.h"
 #include "Mesh.h"
+
+class Window;
 
 class Widget : public GuiListener {
 public:
+    int width;
+    int height;
+
+    int xOffset;
+    int yOffset;
+
     glm::vec2 topLeft;
     glm::vec2 topRight;
     glm::vec2 bottomRight;
@@ -16,9 +23,12 @@ public:
 
     glm::vec4 bgColor;
     Mesh* bgMesh;
+    int bgBevel;
+
+    int zIndex;
 
     float cursorX, cursorY;
-
+    float hitTol;
 
     bool canMove;
     bool canResizeLeft;
@@ -27,27 +37,40 @@ public:
     bool canResizeTop;
 
     TransformState transformState;
-    bool mouseDown;
-    HoverState hoverState;
+    RectPos hoverState;
+    bool hoverTips;
 
     float scalarTransformCache;
     glm::vec2 vec2TransformCache;
     glm::vec4 vec4TransformCache;
 
     std::vector<Widget*> subWidgets;
+    Window* parentWindow;
+    Widget* parentWidget;
 
-    Widget();
+    Widget(Window* window);
 
-    bool onInside(float x, float y);
-    bool onTopLeft(float x, float y);
-    bool onTopRight(float x, float y);
-    bool onBottomRight(float x, float y);
-    bool onBottomLeft(float x, float y);
-    bool onTop(float x, float y);
-    bool onRight(float x, float y);
-    bool onBottom(float x, float y);
-    bool onLeft(float x, float y);
+    bool eqWithTol(float a, float b);
+    bool inInside(float x, float y);
+    bool inTopLeft(float x, float y);
+    bool inTopRight(float x, float y);
+    bool inBottomRight(float x, float y);
+    bool inBottomLeft(float x, float y);
+    bool inTop(float x, float y);
+    bool inRight(float x, float y);
+    bool inBottom(float x, float y);
+    bool inLeft(float x, float y);
 
+    void setResizable();
+    void setResizable(std::vector<RectPos> exclusions);
+    void setNotResizable();
+    void setNotResizable(std::vector<RectPos> exclusions);
+
+    void setMoveable();
+    void setNotMoveable();
+
+    void showHoverTips();
+    void hideHoverTips();
     void updateHoverState(float x, float y);
 
     void updateTransformState(float x, float y);
@@ -56,25 +79,25 @@ public:
 
     void createBackground();
 
-    void setSize(glm::vec2 newBottomLeft, glm::vec2 newTopRight);
+    static Widget* hitTest(std::vector<Widget*> widgets, float x, float y);
+
+    void setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight);
+    void setRelPos(float relXOffset, float relYOffset);
+    void setRelSize(float relWidth, float relHeight);
 
     void updateGeometry();
 
-    void addSubWidget(Widget* widget);
+    Widget* makeSubWidget();
 
-    void onKey(int key, int scancode, int action, int mods) override;
+    void onKeyUp(KeyName key, std::vector<ModKeyName> mods) override;
+    void onKeyDown(KeyName key, std::vector<ModKeyName> mods) override;
 
-    void onMouseMove(float x, float y) override;
-
+    void onMouseMove(float x, float y) override {};
+    void onMouseHover(float x, float y) override;
     void onMouseEnter() override;
     void onMouseLeave() override;
+    void onMouseDown(float x, float y, MouseButtonType type) override;
+    void onMouseUp(float x, float y, MouseButtonType type) override;
 
-    void onMouseDownRight(float x, float y, int mods) override;
-    void onMouseUpRight(float x,float y, int mods) override;
-
-    void onMouseDownLeft(float x, float y, int mods) override;
-    void onMouseUpLeft(float x, float y, int mods) override;
-
-    void onMouseDownMiddle(float x, float y, int mods) override;
-    void onMouseUpMiddle(float x, float y, int mods) override;
+    void onResize(int width, int height) override;
 };
