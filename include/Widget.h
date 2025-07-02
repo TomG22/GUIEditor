@@ -5,30 +5,23 @@
 
 #include "GuiListener.h"
 #include "Mesh.h"
+#include "Rect.h"
 
 class Window;
 
 class Widget : public GuiListener {
 public:
-    int width;
-    int height;
-
-    int xOffset;
-    int yOffset;
-
-    glm::vec2 topLeft;
-    glm::vec2 topRight;
-    glm::vec2 bottomRight;
-    glm::vec2 bottomLeft;
+    Window* parentWindow;
 
     glm::vec4 bgColor;
     Mesh* bgMesh;
     int bgBevel;
 
+    Rect* bgGeometry;
+
     int zIndex;
 
     float cursorX, cursorY;
-    float hitTol;
 
     bool canMove;
     bool canResizeLeft;
@@ -45,21 +38,9 @@ public:
     glm::vec4 vec4TransformCache;
 
     std::vector<Widget*> subWidgets;
-    Window* parentWindow;
     Widget* parentWidget;
 
     Widget(Window* window);
-
-    bool eqWithTol(float a, float b);
-    bool inInside(float x, float y);
-    bool inTopLeft(float x, float y);
-    bool inTopRight(float x, float y);
-    bool inBottomRight(float x, float y);
-    bool inBottomLeft(float x, float y);
-    bool inTop(float x, float y);
-    bool inRight(float x, float y);
-    bool inBottom(float x, float y);
-    bool inLeft(float x, float y);
 
     void setResizable();
     void setResizable(std::vector<RectPos> exclusions);
@@ -77,7 +58,8 @@ public:
 
     void applyTransform(float x, float y, float dx, float dy);
 
-    void createBackground();
+    void requestBGMeshCreation();
+    void requestBGMeshUpdate();
 
     static Widget* hitTest(std::vector<Widget*> widgets, float x, float y);
 
@@ -85,7 +67,7 @@ public:
     void setRelPos(float relXOffset, float relYOffset);
     void setRelSize(float relWidth, float relHeight);
 
-    void updateGeometry();
+    void updateBGMesh();
 
     Widget* makeSubWidget();
 

@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include <functional>
@@ -51,16 +52,25 @@ public:
 
     std::vector<GuiListener*> listeners;
     std::vector<Widget*> widgets;
+    std::unordered_map<Widget*, Mesh*> widgetMeshMap;
 
     std::mutex cmdQueueMut;
     std::queue<std::function<void()>> cmdQueue;
 
-
     Window();
 
     void RegisterListener(GuiListener* listener);
+
     Widget* makeWidget();
+    void createMeshForWidget(Widget* widget);
+    void updateMeshForWidget(Widget* widget);
+
     void initGLFW();
+
+
+    void waitUntilRenderThreadReady();
+
+    void initWindow();
     void startWindowLoop();
 
     void useArrowCursor();

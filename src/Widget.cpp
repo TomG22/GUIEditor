@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 
 #include "Widget.h"
 #include "VertexArray.h"
@@ -6,62 +7,42 @@
 #include "Window.h"
 
 Widget::Widget(Window* window)
-    : width(static_cast<int>(window->width / 2)),
-      height(static_cast<int>(window->height / 2)),
-      topLeft(0.0f),
-      topRight(0.0f),
-      bottomRight(0.0f),
-      bottomLeft(0.0f),
+    : parentWindow(window),
       bgColor(1.0f),
       bgMesh(nullptr),
       cursorX(0.0f),
       cursorY(0.0f),
-      hitTol(5.0f),
       hoverState(RectPos::None),
       hoverTips(true),
       transformState(TransformState::Idle),
       scalarTransformCache(0.0f),
       vec2TransformCache(0.0f),
       vec4TransformCache(0.0f),
-      parentWindow(window),
       parentWidget(nullptr)
 {
     setResizable();
     setMoveable();
+
+    assert(parentWindow != nullptr);
+    bgGeometry = new Rect(parentWindow->width, parentWindow->height);
 }
 
-void Widget::createBackground() {
-    Vertex2D* vertices = new Vertex2D[4] {
-        {bottomLeft,     bgColor},
-        {bottomRight,    bgColor},
-        {topRight,       bgColor},
-        {topLeft,        bgColor}
-    };
+void Widget::requestBGMeshCreation() {
+    Window* window = parentWindow;
+    Widget* self = this;
 
-    unsigned int* indices = new unsigned int[6] {
-        0, 1, 2,
-        2, 3, 0
-    };
+    window->postToRenderThread([window, self]() {
+        window->createMeshForWidget(self);
+    });
+}
 
-    try {
-        VertexArray* va = new VertexArray();
-        VertexBuffer* vb = new VertexBuffer(vertices, sizeof(Vertex2D) * 4);
+void Widget::requestBGMeshUpdate() {
+    Window* window = parentWindow;
+    Widget* self = this;
 
-        VertexBufferLayout* layout = new VertexBufferLayout();
-        layout->Push<Vertex2D>(1);
-
-        va->Bind();
-        vb->Bind();
-        va->AddBuffer(*vb, *layout);
-
-        IndexBuffer* ib = new IndexBuffer(indices, 6);
-
-        bgMesh = new Mesh(va, vb, ib);
-
-    } catch (const std::runtime_error& e) {
-        std::cout << "Mesh ERROR: " << e.what() << std::endl;
-        std::exit(1);
-    }
+    window->postToRenderThread([window, self]() {
+        window->updateMeshForWidget(self);
+    });
 }
 
 Widget* Widget::makeSubWidget() {
@@ -74,8 +55,8 @@ Widget* Widget::hitTest(std::vector<Widget*> widgets, float x, float y) {
     Widget* hitWidget = nullptr;
 
     for (Widget* widget : widgets) {
-        if ((!hitWidget && widget->inInside(x, y)) ||
-            (hitWidget && widget->inInside(x, y) &&
+        if ((!hitWidget && widget->bgGeometry->inInside(x, y)) ||
+            (hitWidget && widget->bgGeometry->inInside(x, y) &&
              widget->zIndex > hitWidget->zIndex)) {
             hitWidget = widget;
         }
@@ -93,100 +74,35 @@ Widget* Widget::hitTest(std::vector<Widget*> widgets, float x, float y) {
 }
 
 void Widget::setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight) {
-    topLeft = {newBottomLeft.x, newTopRight.y};
-    topRight = newTopRight;
-    bottomRight = {newTopRight.x, newBottomLeft.y};
-    bottomLeft = newBottomLeft;
+    bgGeometry->setAbsTransform(newBottomLeft, newTopRight);
+
+    requestBGMeshUpdate();
 
     if (bgMesh != nullptr) {
-        updateGeometry();
+        requestBGMeshUpdate();
     }
 
     updateHoverState(cursorX, cursorY);
 }
 
 void Widget::setRelPos(float relXOffset, float relYOffset) {
-    xOffset = static_cast<int>(parentWindow->width * relXOffset);
-    yOffset = static_cast<int>(parentWindow->height * relYOffset);
-
-    topLeft = {xOffset - width / 2, yOffset + height / 2};
-    topRight = {xOffset + width / 2, yOffset + height / 2};
-    bottomRight = {xOffset + width / 2, yOffset - height / 2};
-    bottomLeft = {xOffset - width / 2, yOffset - height / 2};
+    bgGeometry->setRelPos(relXOffset, relYOffset, parentWindow->width, parentWindow->height);
 
     if (bgMesh != nullptr) {
-        updateGeometry();
+        requestBGMeshUpdate();
     }
 
     updateHoverState(cursorX, cursorY);
 }
 
 void Widget::setRelSize(float relWidth, float relHeight) {
-    width = static_cast<int>(relWidth * parentWindow->width);
-    height = static_cast<int>(relWidth * parentWindow->height);
-
-    topLeft = {xOffset - width / 2, yOffset + height / 2};
-    topRight = {xOffset + width / 2, yOffset + height / 2};
-    bottomRight = {xOffset + width / 2, yOffset - height / 2};
-    bottomLeft = {xOffset - width / 2, yOffset - height / 2};
+    bgGeometry->setRelSize(relWidth, relHeight, parentWindow->width, parentWindow->height);
 
     if (bgMesh != nullptr) {
-        updateGeometry();
+        requestBGMeshUpdate();
     }
 
     updateHoverState(cursorX, cursorY);
-}
-
-void Widget::updateGeometry() {
-     Vertex2D* vertices = new Vertex2D[4] {
-        {bottomLeft,     bgColor},
-        {bottomRight,    bgColor},
-        {topRight,       bgColor},
-        {topLeft,        bgColor}
-    };
-
-    bgMesh->UpdateVertices(vertices, sizeof(Vertex2D) * 4, 0);
-}
-
-bool Widget::eqWithTol(float a, float b) {
-    return std::abs(a - b) <= hitTol;
-}
-
-bool Widget::inInside(float x, float y) {
-    return x >= bottomLeft.x - hitTol && x <= topRight.x + hitTol &&
-           y >= bottomLeft.y - hitTol && y <= topRight.y + hitTol;
-}
-
-bool Widget::inTopLeft(float x, float y) {
-    return eqWithTol(x, topLeft.x) && eqWithTol(y, topLeft.y);
-}
-
-bool Widget::inTopRight(float x, float y) {
-    return eqWithTol(x, topRight.x) && eqWithTol(y, topRight.y);
-}
-
-bool Widget::inBottomRight(float x, float y) {
-    return eqWithTol(x, bottomRight.x) && eqWithTol(y, bottomRight.y);
-}
-
-bool Widget::inBottomLeft(float x, float y) {
-    return eqWithTol(x, bottomLeft.x) && eqWithTol(y, bottomLeft.y);
-}
-
-bool Widget::inTop(float x, float y) {
-    return eqWithTol(y, topLeft.y);
-}
-
-bool Widget::inRight(float x, float y) {
-    return eqWithTol(x, topRight.x);
-}
-
-bool Widget::inBottom(float x, float y) {
-    return eqWithTol(y, bottomRight.y);
-}
-
-bool Widget::inLeft(float x, float y) {
-    return eqWithTol(x, bottomLeft.x);
 }
 
 void Widget::setResizable() {
@@ -330,104 +246,45 @@ void Widget::setNotMoveable() {
 }
 
 
-
-void Widget::applyTransform(float x, float y, float dx, float dy) {
-    switch (transformState) {
-        case TransformState::Idle:
-            break;
-
-        case TransformState::Move:
-            topLeft.x += dx;
-            topLeft.y += dy;
-            topRight.x += dx;
-            topRight.y += dy;
-            bottomRight.x += dx;
-            bottomRight.y += dy;
-            bottomLeft.x += dx;
-            bottomLeft.y += dy;
-            break;
-
-        case TransformState::ResizeTop:
-            topLeft.y = y;
-            topRight.y = y;
-            break;
-        case TransformState::ResizeRight:
-            topRight.x = x;
-            bottomRight.x = x;
-            break;
-        case TransformState::ResizeBottom:
-            bottomLeft.y = y;
-            bottomRight.y = y;
-            break;
-        case TransformState::ResizeLeft:
-            topLeft.x = x;
-            bottomLeft.x = x;
-            break;
-
-        case TransformState::ResizeTopLeft:
-            topLeft.x = x;
-            topLeft.y = y;
-            bottomLeft.x = x;
-            topRight.y = y;
-            break;
-        case TransformState::ResizeTopRight:
-            topRight.x = x;
-            topRight.y = y;
-            topLeft.y = y;
-            bottomRight.x = x;
-            break;
-        case TransformState::ResizeBottomRight:
-            bottomRight.x = x;
-            bottomRight.y = y;
-            topRight.x = x;
-            bottomLeft.y = y;
-            break;
-        case TransformState::ResizeBottomLeft:
-            bottomLeft.x = x;
-            bottomLeft.y = y;
-            bottomRight.y = y;
-            topLeft.x = x;
-            break;
-    }
-}
-
 void Widget::updateTransformState(float x, float y) {
-    if (inTopLeft(x, y) && canResizeTop && canResizeLeft) {
+    if (bgGeometry->inTopLeft(x, y) && canResizeTop && canResizeLeft) {
         transformState = TransformState::ResizeTopLeft;
-        vec2TransformCache = topLeft;
+        vec2TransformCache = bgGeometry->topLeft;
     }
-    else if (inTopRight(x, y) && canResizeTop && canResizeRight) {
+    else if (bgGeometry->inTopRight(x, y) && canResizeTop && canResizeRight) {
         transformState = TransformState::ResizeTopRight;
-        vec2TransformCache = topRight;
+        vec2TransformCache = bgGeometry->topRight;
     }
-    else if (inBottomRight(x, y) && canResizeBottom && canResizeRight) {
+    else if (bgGeometry->inBottomRight(x, y) && canResizeBottom && canResizeRight) {
         transformState = TransformState::ResizeBottomRight;
-        vec2TransformCache = bottomRight;
+        vec2TransformCache = bgGeometry->bottomRight;
     }
-    else if (inBottomLeft(x, y) && canResizeBottom && canResizeLeft) {
+    else if (bgGeometry->inBottomLeft(x, y) && canResizeBottom && canResizeLeft) {
         transformState = TransformState::ResizeBottomLeft;
-        vec2TransformCache = bottomRight;
+        vec2TransformCache = bgGeometry->bottomLeft;
     }
-    else if (inTop(x, y) && canResizeTop) {
+    else if (bgGeometry->inTop(y) && canResizeTop) {
         transformState = TransformState::ResizeTop;
-        scalarTransformCache = topLeft.y;
+        scalarTransformCache = bgGeometry->topLeft.y;
     }
-    else if (inRight(x, y) && canResizeRight) {
+    else if (bgGeometry->inRight(x) && canResizeRight) {
         transformState = TransformState::ResizeRight;
-        scalarTransformCache = topRight.x;
+        scalarTransformCache = bgGeometry->topRight.x;
     }
-    else if (inBottom(x, y) && canResizeBottom) {
+    else if (bgGeometry->inBottom(y) && canResizeBottom) {
         transformState = TransformState::ResizeBottom;
-        scalarTransformCache = bottomRight.y;
+        scalarTransformCache = bgGeometry->bottomRight.y;
     }
-    else if (inLeft(x, y) && canResizeLeft) {
+    else if (bgGeometry->inLeft(x) && canResizeLeft) {
         transformState = TransformState::ResizeLeft;
-        scalarTransformCache = bottomLeft.x;
+        scalarTransformCache = bgGeometry->bottomLeft.x;
     }
-    else if (inInside(x, y) && canMove) {
+    else if (bgGeometry->inInside(x, y) && canMove) {
         transformState = TransformState::Move;
-        vec4TransformCache = glm::vec4(bottomLeft.x, bottomLeft.y,
-                                       topRight.x, topRight.y);
+        vec4TransformCache = glm::vec4(bgGeometry->bottomLeft.x,
+                                       bgGeometry->bottomLeft.y,
+                                       bgGeometry->topRight.x,
+                                       bgGeometry->topRight.y);
     } else {
         transformState = TransformState::Idle;
     }
@@ -450,31 +307,31 @@ void Widget::updateHoverState(float x, float y) {
         return;
     }
 
-    if (inTopLeft(x, y) && canResizeTop && canResizeLeft) {
+    if (bgGeometry->inTopLeft(x, y) && canResizeTop && canResizeLeft) {
         hoverState = RectPos::TopLeft;
     }
-    else if (inTopRight(x, y) && canResizeTop && canResizeRight) {
+    else if (bgGeometry->inTopRight(x, y) && canResizeTop && canResizeRight) {
         hoverState = RectPos::TopRight;
     }
-    else if (inBottomRight(x, y) && canResizeBottom && canResizeRight) {
+    else if (bgGeometry->inBottomRight(x, y) && canResizeBottom && canResizeRight) {
         hoverState = RectPos::BottomRight;
     }
-    else if (inBottomLeft(x, y) && canResizeBottom && canResizeLeft) {
+    else if (bgGeometry->inBottomLeft(x, y) && canResizeBottom && canResizeLeft) {
         hoverState = RectPos::BottomLeft;
     }
-    else if (inTop(x, y) && canResizeTop) {
+    else if (bgGeometry->inTop(y) && canResizeTop) {
         hoverState = RectPos::Top;
     }
-    else if (inRight(x, y) && canResizeRight) {
+    else if (bgGeometry->inRight(x) && canResizeRight) {
         hoverState = RectPos::Right;
     }
-    else if (inBottom(x, y) && canResizeBottom) {
+    else if (bgGeometry->inBottom(y) && canResizeBottom) {
         hoverState = RectPos::Bottom;
     }
-    else if (inLeft(x, y) && canResizeLeft) {
+    else if (bgGeometry->inLeft(x) && canResizeLeft) {
         hoverState = RectPos::Left;
     }
-    else if (inInside(x, y) && canMove) {
+    else if (bgGeometry->inInside(x, y) && canMove) {
         hoverState = RectPos::Inside;
     }
     else {
@@ -491,11 +348,11 @@ void Widget::onMouseHover(float x, float y) {
     float dx = x - cursorX;
     float dy = y - cursorY;
 
-    applyTransform(x, y, dx, dy);
+    bgGeometry->applyTransform(transformState, x, y, dx, dy);
 
     updateHoverState(x, y);
 
-    updateGeometry();
+    requestBGMeshUpdate();
 
     for (GuiListener* listener : listeners) {
         if (listener->regMouseHover) {
@@ -536,7 +393,7 @@ void Widget::onMouseDown(float x, float y, MouseButtonType type) {
 
             updateTransformState(x, y);
 
-            if (inInside(x, y)) {
+            if (bgGeometry->inInside(x, y)) {
                 for (GuiListener* listener : listeners) {
                     listener->onMouseDown(x, y, type);
                 }

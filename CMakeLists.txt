@@ -42,6 +42,7 @@ add_executable(${PROJECT_NAME}
     src/VertexBuffer.cpp
     src/Widget.cpp
     src/Window.cpp
+    src/Rect.cpp
 
     dependencies/glad/src/glad.c
     dependencies/stb/stb_image.cpp

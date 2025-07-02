@@ -35,6 +35,69 @@ Widget* Window::makeWidget() {
     return widget;
 }
 
+void Window::createMeshForWidget(Widget* widget) {
+    assert(widget && widget->bgGeometry);
+
+    // Create vertices
+    Vertex2D vertices[4] = {
+        {widget->bgGeometry->bottomLeft, widget->bgColor},
+        {widget->bgGeometry->bottomRight, widget->bgColor},
+        {widget->bgGeometry->topRight, widget->bgColor},
+        {widget->bgGeometry->topLeft, widget->bgColor}
+    };
+
+    unsigned int indices[6] = {0,1,2, 2,3,0};
+
+    // Clean up old mesh if exists
+    if (widgetMeshMap.count(widget)) {
+        delete widgetMeshMap[widget];
+        widgetMeshMap.erase(widget);
+    }
+
+    try {
+        VertexArray* va = new VertexArray();
+        VertexBuffer* vb = new VertexBuffer(vertices, sizeof(Vertex2D)*4);
+
+        VertexBufferLayout* layout = new VertexBufferLayout();
+        layout->Push<Vertex2D>(1);
+
+        va->Bind();
+        vb->Bind();
+        va->AddBuffer(*vb, *layout);
+
+        IndexBuffer* ib = new IndexBuffer(indices, 6);
+
+        Mesh* mesh = new Mesh(va, vb, ib);
+
+        widgetMeshMap[widget] = mesh;
+
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Mesh creation error: " << e.what() << std::endl;
+        std::exit(1);
+    }
+}
+
+void Window::updateMeshForWidget(Widget* widget) {
+    assert(widget && widget->bgGeometry);
+
+    if (!widgetMeshMap.count(widget)) {
+        // Mesh doesn't exist yet — create it
+        createMeshForWidget(widget);
+        return;
+    }
+
+    Mesh* mesh = widgetMeshMap[widget];
+
+    Vertex2D vertices[4] = {
+        {widget->bgGeometry->bottomLeft, widget->bgColor},
+        {widget->bgGeometry->bottomRight, widget->bgColor},
+        {widget->bgGeometry->topRight, widget->bgColor},
+        {widget->bgGeometry->topLeft, widget->bgColor}
+    };
+
+    mesh->UpdateVertices(vertices, sizeof(Vertex2D)*4, 0);
+}
+
 void Window::initGLFW() {
     // Set the debug callback for all GLFW errors
     glfwSetErrorCallback(glfwErrorCallback);
@@ -86,8 +149,7 @@ void Window::updateCursor(Widget* widget) {
     hoverState = widget->hoverState;
 }
 
-
-void Window::startWindowLoop() {
+void Window::initWindow() {
     window = glfwCreateWindow(width, height, "GLFW Window", nullptr, nullptr);
 
     // Check if window creation errors
@@ -130,6 +192,13 @@ void Window::startWindowLoop() {
     resizeAllCursor = glfwCreateStandardCursor(GLFW_RESIZE_ALL_CURSOR);
 
     useArrowCursor();
+}
+
+
+void Window::startWindowLoop() {
+    if (!window) {
+        initWindow();
+    }
 
     proj = glm::ortho(0.0f, width * 1.0f, height * 1.0f, 0.0f, -1.0f, 1.0f);
 
@@ -147,17 +216,22 @@ void Window::startWindowLoop() {
         renderer->Clear();
 
         // Fetch from the command queue before rendering
-        std::lock_guard<std::mutex> lock(cmdQueueMut);
+        std::unique_lock<std::mutex> lock(cmdQueueMut);
         while (!cmdQueue.empty()) {
             cmdQueue.front()();
             cmdQueue.pop();
         }
+        lock.unlock();
+
+        for (auto& pair : widgetMeshMap) {
+            Mesh* mesh = pair.second;
+            if (mesh) {
+                renderer->Draw(*mesh, *shader2D);
+            }
+        }
+
 
         for (Widget* widget : widgets) {
-            if (widget->bgMesh != nullptr) {
-                renderer->Draw(*(widget->bgMesh), *shader2D);
-            }
-
             if (this->hoverState != widget->hoverState) {
                 updateCursor(widget);
             }
