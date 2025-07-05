@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 #include "Widget.h"
 #include "VertexArray.h"
@@ -14,6 +15,7 @@ Widget::Widget(Window* window)
       cursorY(0.0f),
       hoverState(RectPos::None),
       hoverTips(true),
+      lockZIndex(true),
       transformState(TransformState::Idle),
       scalarTransformCache(0.0f),
       vec2TransformCache(0.0f),
@@ -43,34 +45,6 @@ void Widget::requestBGMeshUpdate() {
     window->postToRenderThread([window, self]() {
         window->updateMeshForWidget(self);
     });
-}
-
-Widget* Widget::makeSubWidget() {
-    Widget* widget = new Widget(this->parentWindow);
-    subWidgets.push_back(widget);
-    return widget;
-}
-
-Widget* Widget::hitTest(std::vector<Widget*> widgets, float x, float y) {
-    Widget* hitWidget = nullptr;
-
-    for (Widget* widget : widgets) {
-        if ((!hitWidget && widget->bgGeometry->inInside(x, y)) ||
-            (hitWidget && widget->bgGeometry->inInside(x, y) &&
-             widget->zIndex > hitWidget->zIndex)) {
-            hitWidget = widget;
-        }
-    }
-
-    if (hitWidget == nullptr) {
-        return nullptr;
-    }
-
-    if (hitWidget->subWidgets.empty()) {
-        return hitWidget;
-    }
-
-    return hitWidget->hitTest(hitWidget->subWidgets, x, y);
 }
 
 void Widget::setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight) {
@@ -257,6 +231,7 @@ void Widget::updateTransformState(float x, float y) {
     }
     else if (bgGeometry->inBottomRight(x, y) && canResizeBottom && canResizeRight) {
         transformState = TransformState::ResizeBottomRight;
+
         vec2TransformCache = bgGeometry->bottomRight;
     }
     else if (bgGeometry->inBottomLeft(x, y) && canResizeBottom && canResizeLeft) {
@@ -407,7 +382,7 @@ void Widget::onMouseDown(float x, float y, MouseButtonType type) {
             }
             break;
         default:
-            printf("Unhandled mouse down\n");
+            printf("unhandled mouse down\n");
     }
 
     // save the mouse-down target somewhere for later use in mouse up
@@ -435,7 +410,7 @@ void Widget::onMouseUp(float x, float y, MouseButtonType type) {
             }
             break;
         default:
-            printf("Unhandled mouse up\n");
+            printf("unhandled mouse up\n");
     }
 
     cursorX = x;
@@ -448,4 +423,29 @@ void Widget::onResize(int width, int height) {
             listener->onResize(width, height);
         }
     }
+}
+
+Widget* Widget::makeSubWidget() {
+    Widget* widget = new Widget(this->parentWindow);
+    subWidgets.push_back(widget);
+    return widget;
+}
+
+Widget* Widget::hitTest(const std::vector<Widget*>& widgets, float x, float y) {
+    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
+        Widget* widget = *it;
+        if (widget->bgGeometry->inInside(x, y)) {
+            if (widget->subWidgets.empty()) {
+                return widget;
+            } else {
+                Widget* hitChild = widget->hitTest(widget->subWidgets, x, y);
+                if (hitChild) {
+                    return hitChild;
+                } else {
+                    return widget;
+                }
+            }
+        }
+    }
+    return nullptr;
 }

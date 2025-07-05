@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <glm/glm.hpp>
+#include <unordered_map>
 
 #include "GuiListener.h"
 #include "Mesh.h"
@@ -29,6 +30,8 @@ public:
     bool canResizeBottom;
     bool canResizeTop;
 
+    bool lockZIndex;
+
     TransformState transformState;
     RectPos hoverState;
     bool hoverTips;
@@ -38,9 +41,12 @@ public:
     glm::vec4 vec4TransformCache;
 
     std::vector<Widget*> subWidgets;
+    std::unordered_map<Widget*, size_t> subWidgetIndices;
+
     Widget* parentWidget;
 
     Widget(Window* window);
+    Widget(Widget* widget);
 
     void setResizable();
     void setResizable(std::vector<RectPos> exclusions);
@@ -61,8 +67,6 @@ public:
     void requestBGMeshCreation();
     void requestBGMeshUpdate();
 
-    static Widget* hitTest(std::vector<Widget*> widgets, float x, float y);
-
     void setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight);
     void setRelPos(float relXOffset, float relYOffset);
     void setRelSize(float relWidth, float relHeight);
@@ -82,4 +86,6 @@ public:
     void onMouseUp(float x, float y, MouseButtonType type) override;
 
     void onResize(int width, int height) override;
+
+    static Widget* hitTest(const std::vector<Widget*>& widgets, float x, float y);
 };

@@ -14,7 +14,10 @@ Window::Window()
     : window(nullptr),
       shader2D(nullptr),
       hoverState(RectPos::None),
+      nextHoverState(RectPos::None),
+      focusedWidget(nullptr),
       hoveredWidget(nullptr),
+      hitWidget(nullptr),
       width(1440),
       height(700),
       renderer() {
@@ -32,11 +35,86 @@ void Window::RegisterListener(GuiListener* listener) {
 Widget* Window::makeWidget() {
     Widget* widget = new Widget(this);
     widgets.push_back(widget);
+    widgetIndices[widget] = widgets.size() - 1;
     return widget;
 }
 
+void Window::removeWidget(Widget* widget) {
+    auto it = widgetIndices.find(widget);
+    if (it == widgetIndices.end()) return;
+
+    size_t index = it->second;
+    widgetIndices.erase(it);
+
+    if (index != widgets.size() - 1) {
+        std::swap(widgets[index], widgets.back());
+
+        widgetIndices[widgets[index]] = index;
+    }
+
+    widgets.pop_back();
+}
+
+void Window::moveToFront(Widget* widget) {
+    auto it = widgetIndices.find(widget);
+    if (it == widgetIndices.end()) return;
+
+    size_t index = it->second;
+
+    if (index == widgets.size() - 1) return;
+
+    widgets.erase(widgets.begin() + index);
+    widgets.push_back(widget);
+
+    for (size_t i = index; i < widgets.size(); ++i) {
+        widgetIndices[widgets[i]] = i;
+    }
+}
+
+void Window::moveToBack(Widget* widget) {
+    auto it = widgetIndices.find(widget);
+    if (it == widgetIndices.end()) return;
+
+    size_t index = it->second;
+
+    if (index == 0) return;
+
+    widgets.erase(widgets.begin() + index);
+    widgets.insert(widgets.begin(), widget);
+
+    for (size_t i = 0; i < widgets.size(); ++i) {
+        widgetIndices[widgets[i]] = i;
+    }
+}
+
+void Window::moveForward(Widget* widget) {
+    auto it = widgetIndices.find(widget);
+    if (it == widgetIndices.end()) return;
+
+    size_t index = it->second;
+
+    if (index == widgets.size() - 1) return;
+
+    std::swap(widgets[index], widgets[index + 1]);
+    widgetIndices[widgets[index]] = index;
+    widgetIndices[widgets[index + 1]] = index + 1;
+}
+
+void Window::moveBackward(Widget* widget) {
+    auto it = widgetIndices.find(widget);
+    if (it == widgetIndices.end()) return;
+
+    size_t index = it->second;
+
+    if (index == 0) return;
+
+    std::swap(widgets[index], widgets[index - 1]);
+    widgetIndices[widgets[index]] = index;
+    widgetIndices[widgets[index - 1]] = index - 1;
+}
+
 void Window::createMeshForWidget(Widget* widget) {
-    assert(widget && widget->bgGeometry);
+    assert(widget && widget->bgGeometry && !meshMap.contains(widget));
 
     // Create vertices
     Vertex2D vertices[4] = {
@@ -47,12 +125,6 @@ void Window::createMeshForWidget(Widget* widget) {
     };
 
     unsigned int indices[6] = {0,1,2, 2,3,0};
-
-    // Clean up old mesh if exists
-    if (widgetMeshMap.count(widget)) {
-        delete widgetMeshMap[widget];
-        widgetMeshMap.erase(widget);
-    }
 
     try {
         VertexArray* va = new VertexArray();
@@ -69,7 +141,7 @@ void Window::createMeshForWidget(Widget* widget) {
 
         Mesh* mesh = new Mesh(va, vb, ib);
 
-        widgetMeshMap[widget] = mesh;
+        meshMap[widget] = mesh;
 
     } catch (const std::runtime_error& e) {
         std::cerr << "Mesh creation error: " << e.what() << std::endl;
@@ -78,15 +150,9 @@ void Window::createMeshForWidget(Widget* widget) {
 }
 
 void Window::updateMeshForWidget(Widget* widget) {
-    assert(widget && widget->bgGeometry);
+    assert(widget && widget->bgGeometry && meshMap.contains(widget));
 
-    if (!widgetMeshMap.count(widget)) {
-        // Mesh doesn't exist yet — create it
-        createMeshForWidget(widget);
-        return;
-    }
-
-    Mesh* mesh = widgetMeshMap[widget];
+    Mesh* mesh = meshMap[widget];
 
     Vertex2D vertices[4] = {
         {widget->bgGeometry->bottomLeft, widget->bgColor},
@@ -113,8 +179,8 @@ void Window::initGLFW() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 }
 
-void Window::updateCursor(Widget* widget) {
-    switch (widget->hoverState) {
+void Window::updateCursor(RectPos hoverState) {
+    switch (hoverState) {
         case RectPos::Inside:
             useResizeAllCursor();
             break;
@@ -145,8 +211,6 @@ void Window::updateCursor(Widget* widget) {
         default:
             useArrowCursor();
     }
-
-    hoverState = widget->hoverState;
 }
 
 void Window::initWindow() {
@@ -223,18 +287,15 @@ void Window::startWindowLoop() {
         }
         lock.unlock();
 
-        for (auto& pair : widgetMeshMap) {
-            Mesh* mesh = pair.second;
-            if (mesh) {
-                renderer->Draw(*mesh, *shader2D);
+        for (Widget* widget : widgets) {
+            if (meshMap[widget]) {
+                renderer->Draw(*meshMap[widget], *shader2D);
             }
         }
 
-
-        for (Widget* widget : widgets) {
-            if (this->hoverState != widget->hoverState) {
-                updateCursor(widget);
-            }
+        if (hoverState != nextHoverState) {
+            updateCursor(nextHoverState);
+            hoverState = nextHoverState;
         }
 
         GLCall(glfwSwapBuffers(window));
@@ -288,27 +349,35 @@ void Window::keyCallback(GLFWwindow* window,
 }
 
 void Window::handleMouseMove(float x, float y) {
-    Widget* prevHitWidget = hoveredWidget;
-    hoveredWidget = Widget::hitTest(widgets, x, y);
+    Widget* prevHovered = hoveredWidget;
+    Widget* hovered = Widget::hitTest(widgets, x, y);
 
-    if (prevHitWidget && prevHitWidget->regMouseLeave &&
-        prevHitWidget->transformState == TransformState::Idle &&
-        hoveredWidget != prevHitWidget) {
-        prevHitWidget->onMouseLeave();
+    if (focusedWidget && focusedWidget->regMouseHover &&
+        focusedWidget->transformState != TransformState::Idle) {
+        focusedWidget->onMouseHover(x, y);
+
+        hoveredWidget = focusedWidget;
     }
-
-    if (prevHitWidget && prevHitWidget->regMouseHover &&
-        prevHitWidget->transformState != TransformState::Idle) {
-        prevHitWidget->onMouseHover(x, y);
-        hoveredWidget = prevHitWidget;  // Preserve if mid-transform
-    } else {
-        if (hoveredWidget && hoveredWidget->regMouseEnter && hoveredWidget != prevHitWidget) {
-            hoveredWidget->onMouseEnter();
+    else {
+        if (hovered && hovered->regMouseHover && hovered == prevHovered) {
+            hovered->onMouseHover(x, y);
         }
 
-        if (hoveredWidget && hoveredWidget->regMouseHover) {
-            hoveredWidget->onMouseHover(x, y);
+        if (prevHovered && prevHovered->regMouseLeave && prevHovered != hovered) {
+            prevHovered->onMouseLeave();
         }
+
+        if (hovered && hovered->regMouseEnter && hovered != prevHovered) {
+            hovered->onMouseEnter();
+        }
+
+        if (hovered) {
+            nextHoverState = hovered->hoverState;
+        } else {
+            nextHoverState = RectPos::None;
+        }
+
+        hoveredWidget = hovered;
     }
 
     for (GuiListener* listener : listeners) {
@@ -325,15 +394,24 @@ void Window::cursorPosCallback(GLFWwindow* window,
 }
 
 void Window::handleMouseButton(int action, MouseButtonType type) {
+    Widget* prevHitWidget = hitWidget;
+
     double xDouble, yDouble;
     glfwGetCursorPos(window, &xDouble, &yDouble);
     float x = static_cast<float>(xDouble);
     float y = static_cast<float>(yDouble);
+    Widget* hit = Widget::hitTest(widgets, x, y);
 
     if (action == GLFW_PRESS) {
-        Widget* hitWidget = Widget::hitTest(widgets, x, y);
-        if (hitWidget && hitWidget->regMouseDown) {
-            hitWidget->onMouseDown(x, y, type);
+        if (hit && hit->regMouseDown) {
+            hit->onMouseDown(x, y, type);
+            hitWidget = hit;
+
+            focusedWidget = hit;
+            if (!focusedWidget->lockZIndex) {
+                moveToFront(hitWidget);
+            }
+
         }
 
         for (GuiListener* listener : listeners) {
@@ -342,9 +420,13 @@ void Window::handleMouseButton(int action, MouseButtonType type) {
             }
         }
     } else if (action == GLFW_RELEASE) {
-        Widget* hitWidget = Widget::hitTest(widgets, x, y);
-        if (hitWidget && hitWidget->regMouseUp) {
-            hitWidget->onMouseUp(x, y, type);
+        if (prevHitWidget && prevHitWidget->regMouseUp) {
+            prevHitWidget->onMouseUp(x, y, type);
+        }
+
+        if (hit != hoveredWidget) {
+            hoveredWidget->onMouseLeave();
+            hit->onMouseEnter();
         }
 
         for (GuiListener* listener : listeners) {

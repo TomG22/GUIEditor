@@ -68,7 +68,6 @@ void Rect::setRelPos(float relXOffset, float relYOffset, int winWidth, int winHe
     xOffset = static_cast<int>(winWidth * relXOffset);
     yOffset = static_cast<int>(winHeight * relYOffset);
 
-    // Top-left is (center.x - half width, center.y - half height)
     topLeft = { xOffset - width / 2, yOffset - height / 2 };
     topRight = { xOffset + width / 2, yOffset - height / 2 };
     bottomRight = { xOffset + width / 2, yOffset + height / 2 };

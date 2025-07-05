@@ -41,6 +41,9 @@ public:
     GLFWcursor* resizeAllCursor;
 
     RectPos hoverState;
+    RectPos nextHoverState;
+    Widget* focusedWidget;
+    Widget* hitWidget;
     Widget* hoveredWidget;
 
     Renderer* renderer;
@@ -51,8 +54,11 @@ public:
     glm::mat4 proj;
 
     std::vector<GuiListener*> listeners;
+
+    std::unordered_map<Widget*, Mesh*> meshMap;
+
     std::vector<Widget*> widgets;
-    std::unordered_map<Widget*, Mesh*> widgetMeshMap;
+    std::unordered_map<Widget*, size_t> widgetIndices;
 
     std::mutex cmdQueueMut;
     std::queue<std::function<void()>> cmdQueue;
@@ -62,13 +68,16 @@ public:
     void RegisterListener(GuiListener* listener);
 
     Widget* makeWidget();
+    void removeWidget(Widget* widget);
+    void moveToFront(Widget* widget);
+    void moveToBack(Widget* widget);
+    void moveForward(Widget* widget);
+    void moveBackward(Widget* widget);
+
     void createMeshForWidget(Widget* widget);
     void updateMeshForWidget(Widget* widget);
 
     void initGLFW();
-
-
-    void waitUntilRenderThreadReady();
 
     void initWindow();
     void startWindowLoop();
@@ -80,7 +89,7 @@ public:
     void useResizeNWSECursor();
     void useResizeAllCursor();
 
-    void updateCursor(Widget* widget);
+    void updateCursor(RectPos hoverState);
 
     void handleKey(int key, int action, int mods);
     void handleMouseMove(float x, float y);
