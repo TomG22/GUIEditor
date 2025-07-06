@@ -11,18 +11,13 @@ public:
     glm::vec2 bottomRight;
     glm::vec2 bottomLeft;
 
-    float absRadius;
-    float relRadius;
-    bool relRadiusFlag;
-
-
     float hitTol;
 
     Rect();
 
-    float getWidth() const;
-    float getHeight() const;
-    float getRadius() const;
+    float getAbsWidth() const;
+    float getAbsHeight() const;
+    float getAbsRadius() const;
 
     bool eqWithTol(float a, float b) const;
 
@@ -44,4 +39,9 @@ public:
     void setAbsRadius(float radius);
 
     void applyTransform(TransformState transformState, float x, float y, float dx, float dy);
+
+private:
+    float absRadius;
+    float relRadius;
+    bool relRadiusFlag;
 };

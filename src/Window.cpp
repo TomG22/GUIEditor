@@ -291,8 +291,8 @@ void Window::startWindowLoop() {
             if (meshMap[widget]) {
                 shader2D->Bind();
                 shader2D->SetUniform2f("u_TopLeftPos", widget->bgGeometry->topLeft.x, widget->bgGeometry->topLeft.y);
-                shader2D->SetUniform2f("u_Size", widget->bgGeometry->getWidth(), widget->bgGeometry->getHeight());
-                shader2D->SetUniform1f("u_Radius", widget->bgGeometry->absRadius);
+                shader2D->SetUniform2f("u_Size", widget->bgGeometry->getAbsWidth(), widget->bgGeometry->getAbsHeight());
+                shader2D->SetUniform1f("u_Radius", widget->bgGeometry->getAbsRadius());
                 renderer->Draw(*meshMap[widget], *shader2D);
             }
         }

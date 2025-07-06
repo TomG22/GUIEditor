@@ -15,12 +15,16 @@ Rect::Rect()
       relRadiusFlag(true)
 {}
 
-float Rect::getWidth() const {
+float Rect::getAbsWidth() const {
     return topRight.x - topLeft.x;
 }
 
-float Rect::getHeight() const {
+float Rect::getAbsHeight() const {
     return bottomLeft.y - topLeft.y;
+}
+
+float Rect::getAbsRadius() const {
+    return absRadius;
 }
 
 bool Rect::eqWithTol(float a, float b) const {
@@ -73,8 +77,8 @@ void Rect::setAbsTransform(glm::vec2 newTopLeft, glm::vec2 newBottomRight) {
 }
 
 void Rect::setRelPos(float relXOffset, float relYOffset, int winWidth, int winHeight) {
-    float width = getWidth();
-    float height = getHeight();
+    float width = getAbsWidth();
+    float height = getAbsHeight();
 
     topLeft.x = (winWidth * relXOffset) / 2;
     topLeft.y = (winHeight * relYOffset) / 2;
@@ -99,7 +103,7 @@ void Rect::setRelRadius(float radius) {
     relRadius = radius;
     relRadiusFlag = true;
 
-    absRadius = relRadius * std::min(getWidth(), getHeight());
+    absRadius = relRadius * std::min(getAbsWidth(), getAbsHeight());
 }
 
 void Rect::setAbsRadius(float radius) {
@@ -162,6 +166,6 @@ void Rect::applyTransform(TransformState transformState, float x, float y, float
     bottomLeft = { topLeft.x, bottomRight.y };
 
     if (relRadiusFlag) {
-        absRadius = relRadius * std::min(getWidth(), getHeight());
+        absRadius = relRadius * std::min(getAbsWidth(), getAbsHeight());
     }
 }
