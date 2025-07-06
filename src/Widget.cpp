@@ -10,7 +10,6 @@
 Widget::Widget(Window* window)
     : parentWindow(window),
       bgColor(1.0f),
-      bgMesh(nullptr),
       cursorX(0.0f),
       cursorY(0.0f),
       hoverState(RectPos::None),
@@ -26,7 +25,7 @@ Widget::Widget(Window* window)
     setMoveable();
 
     assert(parentWindow != nullptr);
-    bgGeometry = new Rect(parentWindow->width, parentWindow->height);
+    bgGeometry = new Rect();
 }
 
 void Widget::requestBGMeshCreation() {
@@ -52,19 +51,13 @@ void Widget::setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight) {
 
     requestBGMeshUpdate();
 
-    if (bgMesh != nullptr) {
-        requestBGMeshUpdate();
-    }
-
     updateHoverState(cursorX, cursorY);
 }
 
 void Widget::setRelPos(float relXOffset, float relYOffset) {
     bgGeometry->setRelPos(relXOffset, relYOffset, parentWindow->width, parentWindow->height);
 
-    if (bgMesh != nullptr) {
-        requestBGMeshUpdate();
-    }
+    requestBGMeshUpdate();
 
     updateHoverState(cursorX, cursorY);
 }
@@ -72,11 +65,21 @@ void Widget::setRelPos(float relXOffset, float relYOffset) {
 void Widget::setRelSize(float relWidth, float relHeight) {
     bgGeometry->setRelSize(relWidth, relHeight, parentWindow->width, parentWindow->height);
 
-    if (bgMesh != nullptr) {
-        requestBGMeshUpdate();
-    }
+    requestBGMeshUpdate();
 
     updateHoverState(cursorX, cursorY);
+}
+
+void Widget::setAbsRadius(float radius) {
+    bgGeometry->setAbsRadius(radius);
+
+    requestBGMeshUpdate();
+}
+
+void Widget::setRelRadius(float radius) {
+    bgGeometry->setRelRadius(radius);
+
+    requestBGMeshUpdate();
 }
 
 void Widget::setResizable() {
@@ -384,8 +387,6 @@ void Widget::onMouseDown(float x, float y, MouseButtonType type) {
         default:
             printf("unhandled mouse down\n");
     }
-
-    // save the mouse-down target somewhere for later use in mouse up
 
     cursorX = x;
     cursorY = y;

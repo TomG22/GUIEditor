@@ -15,7 +15,6 @@ public:
     Window* parentWindow;
 
     glm::vec4 bgColor;
-    Mesh* bgMesh;
     int bgBevel;
 
     Rect* bgGeometry;
@@ -70,6 +69,9 @@ public:
     void setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight);
     void setRelPos(float relXOffset, float relYOffset);
     void setRelSize(float relWidth, float relHeight);
+
+    void setAbsRadius(float radius);
+    void setRelRadius(float radius);
 
     void updateBGMesh();
 

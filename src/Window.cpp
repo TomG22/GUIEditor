@@ -118,10 +118,10 @@ void Window::createMeshForWidget(Widget* widget) {
 
     // Create vertices
     Vertex2D vertices[4] = {
-        {widget->bgGeometry->bottomLeft, widget->bgColor},
-        {widget->bgGeometry->bottomRight, widget->bgColor},
-        {widget->bgGeometry->topRight, widget->bgColor},
-        {widget->bgGeometry->topLeft, widget->bgColor}
+        {widget->bgGeometry->topLeft, widget->bgColor, {0.0, 0.0}},
+        {widget->bgGeometry->topRight, widget->bgColor, {0.0, 1.0}},
+        {widget->bgGeometry->bottomRight, widget->bgColor, {1.0, 0.0}},
+        {widget->bgGeometry->bottomLeft, widget->bgColor, {1.0, 0.0}}
     };
 
     unsigned int indices[6] = {0,1,2, 2,3,0};
@@ -155,10 +155,10 @@ void Window::updateMeshForWidget(Widget* widget) {
     Mesh* mesh = meshMap[widget];
 
     Vertex2D vertices[4] = {
-        {widget->bgGeometry->bottomLeft, widget->bgColor},
-        {widget->bgGeometry->bottomRight, widget->bgColor},
-        {widget->bgGeometry->topRight, widget->bgColor},
-        {widget->bgGeometry->topLeft, widget->bgColor}
+        {widget->bgGeometry->topLeft, widget->bgColor, {0.0, 1.0}},
+        {widget->bgGeometry->topRight, widget->bgColor, {1.0, 1.0}},
+        {widget->bgGeometry->bottomRight, widget->bgColor, {1.0, 0.0}},
+        {widget->bgGeometry->bottomLeft, widget->bgColor, {0.0, 0.0}}
     };
 
     mesh->UpdateVertices(vertices, sizeof(Vertex2D)*4, 0);
@@ -218,8 +218,8 @@ void Window::initWindow() {
 
     // Check if window creation errors
     if (window == nullptr) {
-        throw std::runtime_error("GLFW window creation failed");
         glfwTerminate();
+        throw std::runtime_error("GLFW window creation failed");
     }
 
     // Set the current context to our window
@@ -289,6 +289,10 @@ void Window::startWindowLoop() {
 
         for (Widget* widget : widgets) {
             if (meshMap[widget]) {
+                shader2D->Bind();
+                shader2D->SetUniform2f("u_TopLeftPos", widget->bgGeometry->topLeft.x, widget->bgGeometry->topLeft.y);
+                shader2D->SetUniform2f("u_Size", widget->bgGeometry->getWidth(), widget->bgGeometry->getHeight());
+                shader2D->SetUniform1f("u_Radius", widget->bgGeometry->absRadius);
                 renderer->Draw(*meshMap[widget], *shader2D);
             }
         }
@@ -425,8 +429,12 @@ void Window::handleMouseButton(int action, MouseButtonType type) {
         }
 
         if (hit != hoveredWidget) {
-            hoveredWidget->onMouseLeave();
-            hit->onMouseEnter();
+            if (hoveredWidget) {
+                hoveredWidget->onMouseLeave();
+            }
+            if (hit) {
+                hit->onMouseEnter();
+            }
         }
 
         for (GuiListener* listener : listeners) {

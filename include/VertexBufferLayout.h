@@ -7,6 +7,7 @@
 struct Vertex2D {
     glm::vec2 position;
     glm::vec4 color;
+    glm::vec2 texCoord;
 };
 
 struct VertexBufferElement {
@@ -84,5 +85,6 @@ inline void VertexBufferLayout::Push<Vertex2D>(unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         Push<glm::vec2>(1); // (x, y) position
         Push<glm::vec4>(1); // (r, g, b, a) color
+        Push<glm::vec2>(1); // (u, v) texture
     }
 }
