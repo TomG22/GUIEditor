@@ -1,9 +1,19 @@
 #pragma once
 
-#include <WindowListener.h>
+#include <GuiListener.h>
 
-class ListenerExample : public WindowListener {
+class ListenerExample : public GuiListener {
 public:
     ListenerExample();
-    void onKey(int key, int scancode, int action, int mods) override;
+    void onKeyUp(KeyName key, std::vector<ModKeyName> mods) override;
+    void onKeyDown(KeyName key, std::vector<ModKeyName> mods) override;
+
+    void onMouseMove(float x, float y) override;
+    void onMouseHover(float x, float y) override;
+    void onMouseEnter() override;
+    void onMouseLeave() override;
+    void onMouseDown(float x, float y, MouseButtonType type) override;
+    void onMouseUp(float x, float y, MouseButtonType type) override;
+
+    void onResize(int x, int y) override;
 };

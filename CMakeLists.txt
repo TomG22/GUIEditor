@@ -30,7 +30,7 @@ FetchContent_Populate(freetype)
 add_subdirectory(${freetype_SOURCE_DIR})
 
 
-add_executable(${PROJECT_NAME}
+add_library(${PROJECT_NAME}
     src/main.cpp
 
     src/GLDebug.cpp
@@ -67,3 +67,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     freetype
     OpenGL::GL
 )
+
+option(BUILD_EXAMPLES "Build example programs" ON)
+
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()

@@ -6,7 +6,14 @@
 
 class GuiListener {
 public:
-    GuiListener() : id(nextId++) {}
+    GuiListener()
+        : id(nextId++),
+          regKeyDown(false), regKeyUp(false),
+          regMouseMove(false), regMouseHover(false),
+          regMouseEnter(false), regMouseLeave(false),
+          regMouseDown(false), regMouseUp(false),
+          regResize(false) {}
+
     virtual ~GuiListener() = default;
 
     void addListener(GuiListener* listener) {
@@ -28,17 +35,17 @@ public:
     int id;
 
     // Flags for if events are registered for listening
-    bool regKeyDown = false;
-    bool regKeyUp = false;
+    bool regKeyDown;
+    bool regKeyUp;
 
-    bool regMouseMove = false;
-    bool regMouseHover = false;
-    bool regMouseEnter = false;
-    bool regMouseLeave = false;
-    bool regMouseDown = false;
-    bool regMouseUp = false;
+    bool regMouseMove;
+    bool regMouseHover;
+    bool regMouseEnter;
+    bool regMouseLeave;
+    bool regMouseDown;
+    bool regMouseUp;
 
-    bool regResize = false;
+    bool regResize;
 
 
     std::vector<GuiListener*> listeners;    // Sub-listeners
