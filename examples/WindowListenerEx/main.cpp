@@ -18,4 +18,6 @@ int main(int argc, char* argv[]) {
     }
 
     winManager.startEventLoop();
+
+    return 0;
 }

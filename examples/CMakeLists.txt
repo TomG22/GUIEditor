@@ -1,1 +1,2 @@
 add_subdirectory(WindowListenerEx)
+add_subdirectory(WidgetEx)
