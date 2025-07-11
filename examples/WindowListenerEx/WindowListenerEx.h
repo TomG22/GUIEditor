@@ -2,9 +2,9 @@
 
 #include <GuiListener.h>
 
-class ListenerExample : public GuiListener {
+class WindowListenerEx : public GuiListener {
 public:
-    ListenerExample();
+    WindowListenerEx();
     void onKeyUp(KeyName key, std::vector<ModKeyName> mods) override;
     void onKeyDown(KeyName key, std::vector<ModKeyName> mods) override;
 
@@ -16,4 +16,5 @@ public:
     void onMouseUp(float x, float y, MouseButtonType type) override;
 
     void onResize(int x, int y) override;
+    void onReposition(int x, int y) override;
 };

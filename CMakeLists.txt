@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 
 project(GUIEditor)
 
-
 # Fetch the glfw dependency
 include(FetchContent)
 
@@ -18,21 +17,19 @@ FetchContent_Populate(glfw)
 add_subdirectory(${glfw_SOURCE_DIR})
 
 # Fetch the freetype dependency
-FetchContent_Declare(
-    freetype
-    URL https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.xz
-    URL_HASH SHA256=0550350666d427c74daeb85d5ac7bb353acba5f76956395995311a9c6f063289
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
+#FetchContent_Declare(
+#    freetype
+#    URL https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.xz
+#    URL_HASH SHA256=0550350666d427c74daeb85d5ac7bb353acba5f76956395995311a9c6f063289
+#    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+#)
 
-FetchContent_Populate(freetype)
+#FetchContent_Populate(freetype)
 
-add_subdirectory(${freetype_SOURCE_DIR})
+#add_subdirectory(${freetype_SOURCE_DIR})
 
 
 add_library(${PROJECT_NAME}
-    src/main.cpp
-
     src/GLDebug.cpp
     src/IndexBuffer.cpp
     src/Mesh.cpp
@@ -42,6 +39,7 @@ add_library(${PROJECT_NAME}
     src/VertexBuffer.cpp
     src/Widget.cpp
     src/Window.cpp
+    src/WindowManager.cpp
     src/Rect.cpp
 
     dependencies/glad/src/glad.c
@@ -55,7 +53,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_SOURCE_DIR}/dependencies/glad/include
 
     ${glfw_SOURCE_DIR}/include
-    ${freetype_SOURCE_DIR}/include
+    #${freetype_SOURCE_DIR}/include
 )
 
 
@@ -64,11 +62,9 @@ find_package(OpenGL REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     glfw
-    freetype
+    #freetype
     OpenGL::GL
 )
-
-option(BUILD_EXAMPLES "Build example programs" ON)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

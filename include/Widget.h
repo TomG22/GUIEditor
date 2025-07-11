@@ -88,6 +88,7 @@ public:
     void onMouseUp(float x, float y, MouseButtonType type) override;
 
     void onResize(int width, int height) override;
+    void onReposition(int x, int y) override;
 
     static Widget* hitTest(const std::vector<Widget*>& widgets, float x, float y);
 };

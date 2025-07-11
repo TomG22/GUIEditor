@@ -6,10 +6,6 @@
 #include "Renderer.h"
 #include "GLFWTypeConv.h"
 
-void glfwErrorCallback(int error, const char* description) {
-    fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
-}
-
 Window::Window()
     : window(nullptr),
       shader2D(nullptr),
@@ -20,12 +16,13 @@ Window::Window()
       hitWidget(nullptr),
       width(1440),
       height(700),
-      renderer() {
-    try {
-        initGLFW();
-    } catch (const std::runtime_error&) {
-        std::cerr << "GLFW Initialization failed" << std::endl;
-    }
+      renderer(nullptr)
+{
+    initGLFWWindow();
+}
+
+Window::~Window() {
+    glfwDestroyWindow(window);
 }
 
 void Window::RegisterListener(GuiListener* listener) {
@@ -164,21 +161,6 @@ void Window::updateMeshForWidget(Widget* widget) {
     mesh->UpdateVertices(vertices, sizeof(Vertex2D)*4, 0);
 }
 
-void Window::initGLFW() {
-    // Set the debug callback for all GLFW errors
-    glfwSetErrorCallback(glfwErrorCallback);
-
-    // Check if GLFW initialization errors
-    if (!glfwInit()) {
-        throw std::runtime_error("");
-    }
-
-    // Create the GLFW window
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-}
-
 void Window::updateCursor(RectPos hoverState) {
     switch (hoverState) {
         case RectPos::Inside:
@@ -213,7 +195,7 @@ void Window::updateCursor(RectPos hoverState) {
     }
 }
 
-void Window::initWindow() {
+void Window::initGLFWWindow() {
     window = glfwCreateWindow(width, height, "GLFW Window", nullptr, nullptr);
 
     // Check if window creation errors
@@ -227,16 +209,16 @@ void Window::initWindow() {
 
     // Set the window attributes
     glfwSwapInterval(1);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // Save the reference of the current gui instance
     glfwSetWindowUserPointer(window, this);
 
     // Set the callbacks for the window
-    glfwSetKeyCallback(window, Window::keyCallback);
-    glfwSetErrorCallback(glfwErrorCallback);
-    glfwSetCursorPosCallback(window, Window::cursorPosCallback);
-    glfwSetMouseButtonCallback(window, Window::mouseButtonCallback);
+    glfwSetKeyCallback(window, keyCallback);
+    glfwSetCursorPosCallback(window, cursorPosCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwSetWindowPosCallback(window, windowPosCallback);
 
     // Check if GLAD initialization errors
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
@@ -256,13 +238,6 @@ void Window::initWindow() {
     resizeAllCursor = glfwCreateStandardCursor(GLFW_RESIZE_ALL_CURSOR);
 
     useArrowCursor();
-}
-
-
-void Window::startWindowLoop() {
-    if (!window) {
-        initWindow();
-    }
 
     proj = glm::ortho(0.0f, width * 1.0f, height * 1.0f, 0.0f, -1.0f, 1.0f);
 
@@ -273,43 +248,33 @@ void Window::startWindowLoop() {
 
     renderer = new Renderer();
     renderer->clearColor(0.3f, 0.9f, 0.9f, 1.0f);
+}
 
-    while (glfwGetKey(window, GLFW_KEY_X) != GLFW_PRESS && !glfwWindowShouldClose(window)) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+bool Window::shouldClose() {
+    return glfwWindowShouldClose(window);
+}
 
-        renderer->Clear();
+void Window::render() {
+    glfwMakeContextCurrent(window);
 
-        // Fetch from the command queue before rendering
-        std::unique_lock<std::mutex> lock(cmdQueueMut);
-        while (!cmdQueue.empty()) {
-            cmdQueue.front()();
-            cmdQueue.pop();
+    renderer->Clear();
+
+    for (Widget* widget : widgets) {
+        if (meshMap[widget]) {
+            shader2D->Bind();
+            shader2D->SetUniform2f("u_TopLeftPos", widget->bgGeometry->topLeft.x, widget->bgGeometry->topLeft.y);
+            shader2D->SetUniform2f("u_Size", widget->bgGeometry->getAbsWidth(), widget->bgGeometry->getAbsHeight());
+            shader2D->SetUniform1f("u_Radius", widget->bgGeometry->getAbsRadius());
+            renderer->Draw(*meshMap[widget], *shader2D);
         }
-        lock.unlock();
-
-        for (Widget* widget : widgets) {
-            if (meshMap[widget]) {
-                shader2D->Bind();
-                shader2D->SetUniform2f("u_TopLeftPos", widget->bgGeometry->topLeft.x, widget->bgGeometry->topLeft.y);
-                shader2D->SetUniform2f("u_Size", widget->bgGeometry->getAbsWidth(), widget->bgGeometry->getAbsHeight());
-                shader2D->SetUniform1f("u_Radius", widget->bgGeometry->getAbsRadius());
-                renderer->Draw(*meshMap[widget], *shader2D);
-            }
-        }
-
-        if (hoverState != nextHoverState) {
-            updateCursor(nextHoverState);
-            hoverState = nextHoverState;
-        }
-
-        GLCall(glfwSwapBuffers(window));
-        GLCall(glfwPollEvents());
     }
 
-    delete shader2D;
+    if (hoverState != nextHoverState) {
+        updateCursor(nextHoverState);
+        hoverState = nextHoverState;
+    }
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    GLCall(glfwSwapBuffers(window));
 }
 
 void Window::useArrowCursor() {
@@ -465,16 +430,31 @@ void Window::handleResize(int width, int height) {
     shader2D->Unbind();
 
     GLCall(glViewport(0, 0, width, height));
+
+    for (GuiListener* listener : listeners) {
+        if (listener->regResize) {
+            listener->onResize(width, height);
+        }
+    }
+
 }
 
 void Window::framebufferSizeCallback(GLFWwindow* window,
                                      int width, int height) {
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (gui) gui->handleResize(width, height);
-
 }
 
-void Window::postToRenderThread(std::function<void()> command) {
-    std::lock_guard<std::mutex> lock(cmdQueueMut);
-    cmdQueue.push(std::move(command));
+void Window::handleReposition(int x, int y) {
+    for (GuiListener* listener : listeners) {
+        if (listener->regReposition) {
+            listener->onReposition(x, y);
+        }
+    }
+}
+
+void Window::windowPosCallback(GLFWwindow* window,
+                               int x, int y) {
+    Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (gui) gui->handleReposition(x, y);
 }

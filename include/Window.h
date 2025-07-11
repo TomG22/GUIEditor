@@ -3,7 +3,6 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
-#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -18,19 +17,6 @@
 #include "Widget.h"
 
 class Window {
-private:
-    static void keyCallback(GLFWwindow *window,
-                            int key, int scancode, int action, int mods);
-
-    static void cursorPosCallback(GLFWwindow* window,
-                                  double x, double y);
-
-    static void mouseButtonCallback(GLFWwindow* window,
-                                    int button, int action, int mods);
-
-    static void framebufferSizeCallback(GLFWwindow* window,
-                                        int width, int height);
-
 public:
     GLFWwindow* window;
     GLFWcursor* arrowCursor;
@@ -60,10 +46,8 @@ public:
     std::vector<Widget*> widgets;
     std::unordered_map<Widget*, size_t> widgetIndices;
 
-    std::mutex cmdQueueMut;
-    std::queue<std::function<void()>> cmdQueue;
-
     Window();
+    ~Window();
 
     void RegisterListener(GuiListener* listener);
 
@@ -77,10 +61,9 @@ public:
     void createMeshForWidget(Widget* widget);
     void updateMeshForWidget(Widget* widget);
 
-    void initGLFW();
-
-    void initWindow();
-    void startWindowLoop();
+    void initGLFWWindow();
+    bool shouldClose();
+    void render();
 
     void useArrowCursor();
     void useHResizeCursor();
@@ -95,8 +78,23 @@ public:
     void handleMouseMove(float x, float y);
     void handleMouseButton(int action, MouseButtonType type);
     void handleResize(int width, int height);
+    void handleReposition(int x, int y);
 
     void addWidget(Widget* widget);
 
-    void postToRenderThread(std::function<void()> command);
+private:
+    static void keyCallback(GLFWwindow *window,
+                            int key, int scancode, int action, int mods);
+
+    static void cursorPosCallback(GLFWwindow* window,
+                                  double x, double y);
+
+    static void mouseButtonCallback(GLFWwindow* window,
+                                    int button, int action, int mods);
+
+    static void framebufferSizeCallback(GLFWwindow* window,
+                                        int width, int height);
+
+    static void windowPosCallback(GLFWwindow* window,
+                                        int x, int y);
 };

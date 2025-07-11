@@ -31,6 +31,7 @@ public:
     virtual void onMouseUp(float x, float y, MouseButtonType type) = 0;
 
     virtual void onResize(int width, int height) = 0;
+    virtual void onReposition(int x, int y) = 0;
 
     int id;
 
@@ -46,6 +47,7 @@ public:
     bool regMouseUp;
 
     bool regResize;
+    bool regReposition;
 
 
     std::vector<GuiListener*> listeners;    // Sub-listeners

@@ -32,18 +32,14 @@ void Widget::requestBGMeshCreation() {
     Window* window = parentWindow;
     Widget* self = this;
 
-    window->postToRenderThread([window, self]() {
-        window->createMeshForWidget(self);
-    });
+    window->createMeshForWidget(self);
 }
 
 void Widget::requestBGMeshUpdate() {
     Window* window = parentWindow;
     Widget* self = this;
 
-    window->postToRenderThread([window, self]() {
-        window->updateMeshForWidget(self);
-    });
+    window->updateMeshForWidget(self);
 }
 
 void Widget::setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight) {
@@ -422,6 +418,14 @@ void Widget::onResize(int width, int height) {
     for (GuiListener* listener : listeners) {
         if (listener->regResize) {
             listener->onResize(width, height);
+        }
+    }
+}
+
+void Widget::onReposition(int x, int y) {
+    for (GuiListener* listener : listeners) {
+        if (listener->regReposition) {
+            listener->onReposition(x, y);
         }
     }
 }

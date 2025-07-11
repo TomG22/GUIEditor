@@ -15,6 +15,10 @@ configure:
 $(PROJ_NAME):
 	cmd.exe /C "build.bat build"
 
+# CMake build step
+build: $(PROJ_NAME)
+
+
 
 rebuild:
 	cmd.exe /C "build.bat rebuild"
@@ -24,4 +28,4 @@ clean:
 	cmd.exe /C "build.bat clean"
 
 
-.PHONY: all configure $(PROJ_NAME) rebuild clean
+.PHONY: all configure $(PROJ_NAME) build rebuild clean
