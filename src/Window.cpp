@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stack>
 #include <stdexcept>
 
 #include "GLDebug.h"
@@ -6,34 +7,109 @@
 #include "Renderer.h"
 #include "GLFWTypeConv.h"
 
-Window::Window()
+Window::Window(float width, float height)
     : window(nullptr),
-      shader2D(nullptr),
-      hoverState(RectPos::None),
-      nextHoverState(RectPos::None),
+      decorated(true),
+      visible(false),
+      cursorState(TransformType::IDLE),
+      nextCursorState(TransformType::IDLE),
       focusedWidget(nullptr),
       hoveredWidget(nullptr),
       hitWidget(nullptr),
-      width(1440),
-      height(700),
-      renderer(nullptr)
+      bgColor(0.3f, 0.9f, 0.9f, 1.0f)
 {
-    initGLFWWindow();
+    renderer = new Renderer();
+    layout.width.setAbsValue(width);
+    layout.height.setAbsValue(height);
 }
 
 Window::~Window() {
+    if (!window) {
+        return;
+    }
+
     glfwDestroyWindow(window);
 }
 
-void Window::RegisterListener(GuiListener* listener) {
-    listeners.push_back(listener);
+void Window::show() {
+    if (visible) {
+        return;
+    }
+
+    if (!window) {
+        initGLFWWindow();
+    } else {
+        glfwShowWindow(window);
+    }
+
+    visible = true;
+}
+
+void Window::hide() {
+    if (!visible) {
+        return;
+    }
+
+    if (window) {
+        glfwHideWindow(window);
+    }
+
+    visible = false;
+}
+
+void Window::setPos(float x, float y) {
+    if (layout.xPos.isBound()) {
+        layout.xPos.setScale(x);
+    } else {
+        layout.xPos.setAbsValue(x);
+    }
+
+    if (layout.yPos.isBound()) {
+        layout.yPos.setScale(y);
+    } else {
+        layout.yPos.setAbsValue(y);
+    }
+
+    if (!window) {
+        return;
+    }
+
+    glfwSetWindowPos(window, static_cast<int>(layout.xPos.getAbsValue()),
+                             static_cast<int>(layout.yPos.getAbsValue()));
+}
+
+void Window::setSize(float width, float height) {
+    if (layout.width.isBound()) {
+        layout.width.setScale(width);
+    } else {
+        layout.width.setAbsValue(width);
+    }
+
+    if (layout.height.isBound()) {
+        layout.height.setScale(height);
+    } else {
+        layout.height.setAbsValue(height);
+    }
+
+    if (!window) {
+        return;
+    }
+
+    glfwSetWindowSize(window, static_cast<int>(layout.width.getAbsValue()),
+                              static_cast<int>(layout.height.getAbsValue()));
 }
 
 Widget* Window::makeWidget() {
-    Widget* widget = new Widget(this);
+    Widget* widget = new Widget(layout);
+
     widgets.push_back(widget);
     widgetIndices[widget] = widgets.size() - 1;
     return widget;
+}
+
+void Window::addWidget(Widget* widget) {
+    widgets.push_back(widget);
+    widgetIndices[widget] = widgets.size() - 1;
 }
 
 void Window::removeWidget(Widget* widget) {
@@ -110,99 +186,29 @@ void Window::moveBackward(Widget* widget) {
     widgetIndices[widgets[index - 1]] = index - 1;
 }
 
-void Window::createMeshForWidget(Widget* widget) {
-    assert(widget && widget->bgGeometry && !meshMap.contains(widget));
-
-    // Create vertices
-    Vertex2D vertices[4] = {
-        {widget->bgGeometry->topLeft, widget->bgColor, {0.0, 0.0}},
-        {widget->bgGeometry->topRight, widget->bgColor, {0.0, 1.0}},
-        {widget->bgGeometry->bottomRight, widget->bgColor, {1.0, 0.0}},
-        {widget->bgGeometry->bottomLeft, widget->bgColor, {1.0, 0.0}}
-    };
-
-    unsigned int indices[6] = {0,1,2, 2,3,0};
-
-    try {
-        VertexArray* va = new VertexArray();
-        VertexBuffer* vb = new VertexBuffer(vertices, sizeof(Vertex2D)*4);
-
-        VertexBufferLayout* layout = new VertexBufferLayout();
-        layout->Push<Vertex2D>(1);
-
-        va->Bind();
-        vb->Bind();
-        va->AddBuffer(*vb, *layout);
-
-        IndexBuffer* ib = new IndexBuffer(indices, 6);
-
-        Mesh* mesh = new Mesh(va, vb, ib);
-
-        meshMap[widget] = mesh;
-
-    } catch (const std::runtime_error& e) {
-        std::cerr << "Mesh creation error: " << e.what() << std::endl;
-        std::exit(1);
-    }
-}
-
-void Window::updateMeshForWidget(Widget* widget) {
-    assert(widget && widget->bgGeometry && meshMap.contains(widget));
-
-    Mesh* mesh = meshMap[widget];
-
-    Vertex2D vertices[4] = {
-        {widget->bgGeometry->topLeft, widget->bgColor, {0.0, 1.0}},
-        {widget->bgGeometry->topRight, widget->bgColor, {1.0, 1.0}},
-        {widget->bgGeometry->bottomRight, widget->bgColor, {1.0, 0.0}},
-        {widget->bgGeometry->bottomLeft, widget->bgColor, {0.0, 0.0}}
-    };
-
-    mesh->UpdateVertices(vertices, sizeof(Vertex2D)*4, 0);
-}
-
-void Window::updateCursor(RectPos hoverState) {
-    switch (hoverState) {
-        case RectPos::Inside:
-            useResizeAllCursor();
-            break;
-        case RectPos::TopLeft:
-            useResizeNWSECursor();
-            break;
-        case RectPos::TopRight:
-            useResizeNESWCursor();
-            break;
-        case RectPos::BottomRight:
-            useResizeNWSECursor();
-            break;
-        case RectPos::BottomLeft:
-            useResizeNESWCursor();
-            break;
-        case RectPos::Top:
-            useVResizeCursor();
-            break;
-        case RectPos::Right:
-            useHResizeCursor();
-            break;
-        case RectPos::Bottom:
-            useVResizeCursor();
-            break;
-        case RectPos::Left:
-            useHResizeCursor();
-            break;
-        default:
-            useArrowCursor();
-    }
-}
-
 void Window::initGLFWWindow() {
-    window = glfwCreateWindow(width, height, "GLFW Window", nullptr, nullptr);
+    assert(!window &&
+           "Window ERROR: Tried to initialize an already initialized window");
+
+    if (decorated) {
+        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    } else {
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    }
+
+    window = glfwCreateWindow(static_cast<int>(layout.width.getAbsValue()),
+                              static_cast<int>(layout.height.getAbsValue()),
+                              "GLFW Window", nullptr, nullptr);
 
     // Check if window creation errors
     if (window == nullptr) {
         glfwTerminate();
         throw std::runtime_error("GLFW window creation failed");
     }
+
+    // Initialize the window's position
+    glfwSetWindowPos(window, static_cast<int>(layout.xPos.getAbsValue()),
+                             static_cast<int>(layout.yPos.getAbsValue()));
 
     // Set the current context to our window
     glfwMakeContextCurrent(window);
@@ -231,82 +237,150 @@ void Window::initGLFWWindow() {
     GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     arrowCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-    hResizeCursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
-    vResizeCursor = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+    resizeHCursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+    resizeVCursor = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
     resizeNESWCursor = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
     resizeNWSECursor = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
     resizeAllCursor = glfwCreateStandardCursor(GLFW_RESIZE_ALL_CURSOR);
 
-    useArrowCursor();
-
-    proj = glm::ortho(0.0f, width * 1.0f, height * 1.0f, 0.0f, -1.0f, 1.0f);
-
-    shader2D = new Shader("../res/shaders/2DVertexColor.shader");
-    shader2D->Bind();
-    shader2D->SetUniformMat4f("u_Proj", proj);
-    shader2D->Unbind();
-
-    renderer = new Renderer();
-    renderer->clearColor(0.3f, 0.9f, 0.9f, 1.0f);
+    renderer->clearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a);
 }
 
-bool Window::shouldClose() {
-    return glfwWindowShouldClose(window);
+void Window::destroyGLFWWindow() {
+    assert(window &&
+           "Window ERROR: Tried to destroy an uninitialized window");
+
+    glfwDestroyWindow(window);
+    window = nullptr;
+
+    if (arrowCursor) glfwDestroyCursor(arrowCursor);
+    if (resizeHCursor) glfwDestroyCursor(resizeHCursor);
+    if (resizeVCursor) glfwDestroyCursor(resizeVCursor);
+    if (resizeNESWCursor) glfwDestroyCursor(resizeNESWCursor);
+    if (resizeNWSECursor) glfwDestroyCursor(resizeNWSECursor);
+    if (resizeAllCursor) glfwDestroyCursor(resizeAllCursor);
+
+    arrowCursor = resizeHCursor = resizeVCursor =
+    resizeNESWCursor = resizeNWSECursor = resizeAllCursor = nullptr;
+}
+
+void Window::showDecorations() {
+    if (!window || decorated) {
+        return;
+    }
+
+    decorated = true;
+
+    destroyGLFWWindow();
+    initGLFWWindow();
+}
+
+void Window::hideDecorations() {
+    if (!window || decorated) {
+        return;
+    }
+
+    decorated = false;
+
+    destroyGLFWWindow();
+    initGLFWWindow();
+}
+
+void Window::setBGColor(glm::vec4 color) {
+    bgColor = color;
+
+    if (window) {
+        renderer->clearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a);
+    }
 }
 
 void Window::render() {
+    if (!window) {
+        return;
+    }
+
     glfwMakeContextCurrent(window);
 
     renderer->Clear();
 
-    for (Widget* widget : widgets) {
-        if (meshMap[widget]) {
-            shader2D->Bind();
-            shader2D->SetUniform2f("u_TopLeftPos", widget->bgGeometry->topLeft.x, widget->bgGeometry->topLeft.y);
-            shader2D->SetUniform2f("u_Size", widget->bgGeometry->getAbsWidth(), widget->bgGeometry->getAbsHeight());
-            shader2D->SetUniform1f("u_Radius", widget->bgGeometry->getAbsRadius());
-            renderer->Draw(*meshMap[widget], *shader2D);
+
+    std::stack<Widget*> stack;
+
+    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
+        stack.push(*it);
+    }
+
+    while (!stack.empty()) {
+        Widget* current = stack.top();
+        stack.pop();
+
+        renderer->Draw(*current->bgMesh, *current->bgShader);
+
+        for (auto it = current->subWidgets.rbegin(); it != current->subWidgets.rend(); ++it) {
+            stack.push(*it);
         }
     }
 
-    if (hoverState != nextHoverState) {
-        updateCursor(nextHoverState);
-        hoverState = nextHoverState;
+    if (cursorState != nextCursorState) {
+        updateCursor(nextCursorState);
+        cursorState = nextCursorState;
     }
 
     GLCall(glfwSwapBuffers(window));
 }
 
-void Window::useArrowCursor() {
-    glfwSetCursor(window, arrowCursor);
+bool Window::shouldClose() {
+    if (!window) {
+        return 0;
+    }
+
+    return glfwWindowShouldClose(window);
 }
 
-void Window::useHResizeCursor() {
-    glfwSetCursor(window, hResizeCursor);
+void Window::updateCursor(TransformType cursorState) {
+    if (!window) {
+        return;
+    }
+
+    switch (cursorState) {
+        case TransformType::IDLE:
+            glfwSetCursor(window, arrowCursor);
+            break;
+        case TransformType::MOVE:
+            glfwSetCursor(window, resizeAllCursor);
+            break;
+        case TransformType::RESIZE_TOP:
+        case TransformType::RESIZE_BOTTOM:
+            glfwSetCursor(window, resizeVCursor);
+            break;
+        case TransformType::RESIZE_LEFT:
+        case TransformType::RESIZE_RIGHT:
+            glfwSetCursor(window, resizeHCursor);
+            break;
+        case TransformType::RESIZE_TOP_LEFT:
+        case TransformType::RESIZE_BOTTOM_RIGHT:
+            glfwSetCursor(window, resizeNWSECursor);
+            break;
+        case TransformType::RESIZE_TOP_RIGHT:
+        case TransformType::RESIZE_BOTTOM_LEFT:
+            glfwSetCursor(window, resizeNESWCursor);
+            break;
+        default:
+            assert(false && "Window ERROR: Unsupported cursorState in updateCursor");
+            break;
+    }
 }
 
-void Window::useVResizeCursor() {
-    glfwSetCursor(window, vResizeCursor);
-}
-
-void Window::useResizeNESWCursor() {
-    glfwSetCursor(window, resizeNESWCursor);
-}
-
-void Window::useResizeNWSECursor() {
-    glfwSetCursor(window, resizeNWSECursor);
-}
-
-void Window::useResizeAllCursor() {
-    glfwSetCursor(window, resizeAllCursor);
+void Window::registerListener(GuiListener* listener) {
+    listeners.push_back(listener);
 }
 
 void Window::handleKey(int key, int action, int mods) {
     for (auto* listener : listeners) {
         if (action == GLFW_PRESS && listener->regKeyDown) {
-            listener->onKeyDown(convGLFWKey(key), convGLFWMods(mods));
+            listener->handleKeyDown(convGLFWKey(key), convGLFWMods(mods));
         } else if (action == GLFW_RELEASE && listener->regKeyUp) {
-            listener->onKeyUp(convGLFWKey(key), convGLFWMods(mods));
+            listener->handleKeyUp(convGLFWKey(key), convGLFWMods(mods));
         }
     }
 }
@@ -321,29 +395,28 @@ void Window::handleMouseMove(float x, float y) {
     Widget* prevHovered = hoveredWidget;
     Widget* hovered = Widget::hitTest(widgets, x, y);
 
-    if (focusedWidget && focusedWidget->regMouseHover &&
-        focusedWidget->transformState != TransformState::Idle) {
-        focusedWidget->onMouseHover(x, y);
+    if (focusedWidget && focusedWidget->transformState != TransformType::IDLE) {
+        focusedWidget->handleMouseHover(x, y);
 
         hoveredWidget = focusedWidget;
     }
     else {
-        if (hovered && hovered->regMouseHover && hovered == prevHovered) {
-            hovered->onMouseHover(x, y);
+        if (hovered && hovered == prevHovered) {
+            hovered->handleMouseHover(x, y);
         }
 
-        if (prevHovered && prevHovered->regMouseLeave && prevHovered != hovered) {
-            prevHovered->onMouseLeave();
+        if (prevHovered && prevHovered != hovered) {
+            prevHovered->handleMouseLeave();
         }
 
-        if (hovered && hovered->regMouseEnter && hovered != prevHovered) {
-            hovered->onMouseEnter();
+        if (hovered && hovered != prevHovered) {
+            hovered->handleMouseEnter();
         }
 
         if (hovered) {
-            nextHoverState = hovered->hoverState;
+            nextCursorState = hovered->hoverState;
         } else {
-            nextHoverState = RectPos::None;
+            nextCursorState = TransformType::IDLE;
         }
 
         hoveredWidget = hovered;
@@ -351,7 +424,7 @@ void Window::handleMouseMove(float x, float y) {
 
     for (GuiListener* listener : listeners) {
         if (listener->regMouseMove) {
-            listener->onMouseMove(x, y);
+            listener->handleMouseMove(x, y);
         }
     }
 }
@@ -363,48 +436,49 @@ void Window::cursorPosCallback(GLFWwindow* window,
 }
 
 void Window::handleMouseButton(int action, MouseButtonType type) {
-    Widget* prevHitWidget = hitWidget;
-
     double xDouble, yDouble;
+
     glfwGetCursorPos(window, &xDouble, &yDouble);
+
     float x = static_cast<float>(xDouble);
     float y = static_cast<float>(yDouble);
+
+    Widget* prevHitWidget = hitWidget;
     Widget* hit = Widget::hitTest(widgets, x, y);
 
     if (action == GLFW_PRESS) {
-        if (hit && hit->regMouseDown) {
-            hit->onMouseDown(x, y, type);
+        if (hit) {
+            hit->handleMouseDown(x, y, type);
             hitWidget = hit;
 
             focusedWidget = hit;
             if (!focusedWidget->lockZIndex) {
                 moveToFront(hitWidget);
             }
-
         }
 
         for (GuiListener* listener : listeners) {
             if (listener->regMouseDown) {
-                listener->onMouseDown(x, y, type);
+                listener->handleMouseDown(x, y, type);
             }
         }
     } else if (action == GLFW_RELEASE) {
-        if (prevHitWidget && prevHitWidget->regMouseUp) {
-            prevHitWidget->onMouseUp(x, y, type);
+        if (prevHitWidget) {
+            prevHitWidget->handleMouseUp(x, y, type);
         }
 
         if (hit != hoveredWidget) {
             if (hoveredWidget) {
-                hoveredWidget->onMouseLeave();
+                hoveredWidget->handleMouseLeave();
             }
             if (hit) {
-                hit->onMouseEnter();
+                hit->handleMouseEnter();
             }
         }
 
         for (GuiListener* listener : listeners) {
             if (listener->regMouseUp) {
-                listener->onMouseUp(x, y, type);
+                listener->handleMouseUp(x, y, type);
             }
         }
     }
@@ -412,6 +486,10 @@ void Window::handleMouseButton(int action, MouseButtonType type) {
 
 void Window::mouseButtonCallback(GLFWwindow* window,
                                  int button, int action, int mods) {
+    if (!window) {
+        return;
+    }
+
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     MouseButtonType type = convGLFWMouseType(button);
@@ -419,42 +497,34 @@ void Window::mouseButtonCallback(GLFWwindow* window,
     if (gui) gui->handleMouseButton(action, type);
 }
 
-void Window::handleResize(int width, int height) {
-    this->width = width;
-    this->height = height;
-
-    proj = glm::ortho(0.0f, width * 1.0f, height * 1.0f, 0.0f, -1.0f, 1.0f);
-
-    shader2D->Bind();
-    shader2D->SetUniformMat4f("u_Proj", proj);
-    shader2D->Unbind();
-
-    GLCall(glViewport(0, 0, width, height));
-
-    for (GuiListener* listener : listeners) {
-        if (listener->regResize) {
-            listener->onResize(width, height);
-        }
-    }
-
-}
-
-void Window::framebufferSizeCallback(GLFWwindow* window,
-                                     int width, int height) {
-    Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (gui) gui->handleResize(width, height);
-}
-
-void Window::handleReposition(int x, int y) {
-    for (GuiListener* listener : listeners) {
-        if (listener->regReposition) {
-            listener->onReposition(x, y);
-        }
-    }
+void Window::handleReposition(float x, float y) {
+    layout.xPos.forceAbsValue(x);
+    layout.yPos.forceAbsValue(y);
 }
 
 void Window::windowPosCallback(GLFWwindow* window,
                                int x, int y) {
+    if (!window) {
+        return;
+    }
+
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (gui) gui->handleReposition(x, y);
+    if (gui) gui->handleReposition(static_cast<float>(x), static_cast<float>(y));
+}
+
+void Window::handleResize(float width, float height) {
+    layout.width.forceAbsValue(width);
+    layout.height.forceAbsValue(height);
+
+    GLCall(glViewport(0, 0, static_cast<int>(width), static_cast<int>(height)));
+}
+
+void Window::framebufferSizeCallback(GLFWwindow* window,
+                                     int width, int height) {
+    if (!window) {
+        return;
+    }
+
+    Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (gui) gui->handleResize(static_cast<float>(width), static_cast<float>(height));
 }

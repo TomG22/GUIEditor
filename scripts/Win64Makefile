@@ -6,22 +6,20 @@ PROJ_NAME := GUIEditor
 all: $(PROJ_NAME)
 
 
-# CMake configuration step
 configure:
 	cmd.exe /C "build.bat configure"
 
 
-# CMake build step
-$(PROJ_NAME):
+$(PROJ_NAME): configure
 	cmd.exe /C "build.bat build"
 
-# CMake build step
+
 build: $(PROJ_NAME)
 
 
-
 rebuild:
-	cmd.exe /C "build.bat rebuild"
+	cmd.exe /C "build.bat clean"
+	cmd.exe /C "build.bat build"
 
 
 clean:

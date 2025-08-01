@@ -34,13 +34,14 @@ add_library(${PROJECT_NAME}
     src/IndexBuffer.cpp
     src/Mesh.cpp
     src/Renderer.cpp
+    src/Rect.cpp
+    src/RelAttribute.cpp
     src/Shader.cpp
     src/VertexArray.cpp
     src/VertexBuffer.cpp
     src/Widget.cpp
     src/Window.cpp
     src/WindowManager.cpp
-    src/Rect.cpp
 
     dependencies/glad/src/glad.c
     dependencies/stb/stb_image.cpp

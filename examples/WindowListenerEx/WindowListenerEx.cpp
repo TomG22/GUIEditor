@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cassert>
 
 #include "WindowListenerEx.h"
 
@@ -12,47 +13,60 @@ WindowListenerEx::WindowListenerEx() {
     regMouseLeave = true;
     regMouseDown = true;
     regMouseUp = true;
-
-    regResize = true;
-    regReposition = true;
 }
 
-void WindowListenerEx::onKeyUp(KeyName key, std::vector<ModKeyName> mods) {
-    printf("Listener %d: Key up: %d\n", id, key);
+void WindowListenerEx::handleKeyDown(KeyName key, std::vector<ModKeyName> mods) {
+    assert(regKeyDown &&
+           "Listener Ex ERROR: key down event was fired without being registered");
+
+    onKeyDown(key, mods);
 }
 
-void WindowListenerEx::onKeyDown(KeyName key, std::vector<ModKeyName> mods) {
-    printf("Listener %d: Key down: %d\n", id, key);
+void WindowListenerEx::handleKeyUp(KeyName key, std::vector<ModKeyName> mods) {
+    assert(regKeyUp &&
+           "Listener Ex ERROR: key up event was fired without being registered");
+
+    onKeyUp(key, mods);
 }
 
-void WindowListenerEx::onMouseMove(float x, float y) {
-    printf("Listener %d: Mouse moved to (%f, %f) position\n", id, x, y);
+void WindowListenerEx::handleMouseMove(float x, float y) {
+    assert(regMouseMove &&
+           "Listener Ex ERROR: mouse move event was fired without being registered");
+
+    onMouseMove(x, y);
 }
 
-void WindowListenerEx::onMouseHover(float x, float y) {
-    printf("Listener %d: Mouse hovered on (%f, %f) position\n", id, x, y);
+void WindowListenerEx::handleMouseHover(float x, float y) {
+    assert(regMouseHover &&
+           "Listener Ex ERROR: mouse hover event was fired without being registered");
+
+    onMouseHover(x, y);
 }
 
-void WindowListenerEx::onMouseEnter() {
-    printf("Listener %d: Mouse entered\n", id);
+void WindowListenerEx::handleMouseEnter() {
+    assert(regMouseEnter &&
+           "Listener Ex ERROR: mouse enter event was fired without being registered");
+
+    onMouseEnter();
 }
 
-void WindowListenerEx::onMouseLeave() {
-    printf("Listener %d: Mouse left\n", id);
+void WindowListenerEx::handleMouseLeave() {
+    assert(regMouseLeave &&
+           "Listener Ex ERROR: mouse leave event was fired without being registered");
+
+    onMouseLeave();
 }
 
-void WindowListenerEx::onMouseDown(float x, float y, MouseButtonType type) {
-    printf("Listener %d: Mouse button %d down at (%f, %f)\n", id, type, x, y);
+void WindowListenerEx::handleMouseDown(float x, float y, MouseButtonType type) {
+    assert(regMouseDown &&
+           "Listener Ex ERROR: mouse down event was fired without being registered");
+
+    onMouseDown(x, y, type);
 }
 
-void WindowListenerEx::onMouseUp(float x, float y, MouseButtonType type) {
-    printf("Listener %d: Mouse button %d up at (%f, %f)\n", id, type, x, y);
-}
+void WindowListenerEx::handleMouseUp(float x, float y, MouseButtonType type) {
+    assert(regMouseUp &&
+           "Listener Ex ERROR: mouse up event was fired without being registered");
 
-void WindowListenerEx::onResize(int width, int height) {
-    printf("Listener %d: Parent resized to %d x %d\n", id, width, height);
-}
-
-void WindowListenerEx::onReposition(int x, int y) {
-    printf("Listener %d: Parent repositioned to (%d, %d)\n", id, x, y);
+    onMouseUp(x, y, type);
 }

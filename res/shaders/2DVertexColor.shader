@@ -40,7 +40,7 @@ void main() {
 
     float distance = roundedBoxSDF(fragPos - rectCenter, halfSize, u_Radius);
 
-    if (distance > 0.0) {
+    if (distance > 0.01) {
         discard;
     }
 

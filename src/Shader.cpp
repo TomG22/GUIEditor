@@ -8,13 +8,8 @@
 
 Shader::Shader(const std::string& filepath)
     : m_FilePath(filepath), m_RendererID(0) {
-    try {
-        ShaderProgramSource source = ParseShader(filepath);
-        m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
-    } catch (const std::runtime_error& e) {
-        std::cerr << "Shader ERROR: " << e.what() << std::endl;
-        std::exit(1);
-    }
+    ShaderProgramSource source = ParseShader(filepath);
+    m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
 }
 
 Shader::~Shader() {
@@ -25,7 +20,7 @@ ShaderProgramSource Shader::ParseShader(const std::string& filepath) {
     std::ifstream stream(filepath);
 
     if (!stream.is_open()) {
-        throw std::runtime_error("Failed to open shader file: " + filepath);
+        throw std::runtime_error("Shader ERROR: Failed to open shader file: " + filepath);
         return {"", ""};
     }
 

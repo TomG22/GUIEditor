@@ -11,6 +11,7 @@
 #include <mutex>
 #include <utility>
 
+#include "Rect.h"
 #include "GuiListener.h"
 #include "Renderer.h"
 #include "Shader.h"
@@ -19,69 +20,67 @@
 class Window {
 public:
     GLFWwindow* window;
-    GLFWcursor* arrowCursor;
-    GLFWcursor* hResizeCursor;
-    GLFWcursor* vResizeCursor;
-    GLFWcursor* resizeNESWCursor;
-    GLFWcursor* resizeNWSECursor;
-    GLFWcursor* resizeAllCursor;
+    GLFWcursor* arrowCursor, *resizeAllCursor;
+    GLFWcursor* resizeHCursor, *resizeVCursor;
+    GLFWcursor* resizeNESWCursor, *resizeNWSECursor;
 
-    RectPos hoverState;
-    RectPos nextHoverState;
+    bool visible;
+    bool decorated;
+
+    TransformType cursorState;
+    TransformType nextCursorState;
+
     Widget* focusedWidget;
     Widget* hitWidget;
     Widget* hoveredWidget;
 
     Renderer* renderer;
-    Shader* shader2D;
 
-    int width, height;
+    Rect layout;
 
-    glm::mat4 proj;
+    glm::vec4 bgColor;
 
     std::vector<GuiListener*> listeners;
-
-    std::unordered_map<Widget*, Mesh*> meshMap;
 
     std::vector<Widget*> widgets;
     std::unordered_map<Widget*, size_t> widgetIndices;
 
-    Window();
+    Window(float width, float height);
     ~Window();
 
-    void RegisterListener(GuiListener* listener);
+    void show();
+    void hide();
+
+    void setPos(float x, float y);
+    void setSize(float width, float height);
+
+    void showDecorations();
+    void hideDecorations();
 
     Widget* makeWidget();
+    void addWidget(Widget* widget);
     void removeWidget(Widget* widget);
     void moveToFront(Widget* widget);
     void moveToBack(Widget* widget);
     void moveForward(Widget* widget);
     void moveBackward(Widget* widget);
 
-    void createMeshForWidget(Widget* widget);
-    void updateMeshForWidget(Widget* widget);
-
     void initGLFWWindow();
-    bool shouldClose();
+    void destroyGLFWWindow();
+    void setBGColor(glm::vec4 color);
     void render();
+    bool shouldClose();
 
-    void useArrowCursor();
-    void useHResizeCursor();
-    void useVResizeCursor();
-    void useResizeNESWCursor();
-    void useResizeNWSECursor();
-    void useResizeAllCursor();
+    void updateCursor(TransformType transformType);
 
-    void updateCursor(RectPos hoverState);
+    void registerListener(GuiListener* listener);
 
+    // Internal event handlers
     void handleKey(int key, int action, int mods);
     void handleMouseMove(float x, float y);
     void handleMouseButton(int action, MouseButtonType type);
-    void handleResize(int width, int height);
-    void handleReposition(int x, int y);
-
-    void addWidget(Widget* widget);
-
+    void handleResize(float width, float height);
+    void handleReposition(float x, float y);
 private:
     static void keyCallback(GLFWwindow *window,
                             int key, int scancode, int action, int mods);

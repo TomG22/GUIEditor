@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -7,339 +8,325 @@
 #include "IndexBuffer.h"
 #include "Window.h"
 
-Widget::Widget(Window* window)
-    : parentWindow(window),
-      bgColor(1.0f),
-      cursorX(0.0f),
-      cursorY(0.0f),
-      hoverState(RectPos::None),
-      hoverTips(true),
+Widget::Widget(Rect& windowLayout)
+    : bgGeometry(nullptr),
+      zIndex(0),
       lockZIndex(true),
-      transformState(TransformState::Idle),
-      scalarTransformCache(0.0f),
-      vec2TransformCache(0.0f),
-      vec4TransformCache(0.0f),
-      parentWidget(nullptr)
+      bgMesh(nullptr),
+      bgShader(nullptr),
+      bgColor(1.0f),
+      transformState(TransformType::IDLE),
+      canMove(false),
+      canResizeTop(false),
+      canResizeLeft(false),
+      canResizeBottom(false),
+      canResizeRight(false),
+      hoverTips(false),
+      cursorX(0), cursorY(0),
+      windowLayout(windowLayout)
 {
+    bgGeometry = new Rect();
+    bgShader = new Shader("../res/shaders/2DVertexColor.shader");
+
     setResizable();
     setMoveable();
 
-    assert(parentWindow != nullptr);
-    bgGeometry = new Rect();
+    updateBackground();
 }
 
-void Widget::requestBGMeshCreation() {
-    Window* window = parentWindow;
-    Widget* self = this;
-
-    window->createMeshForWidget(self);
+Widget* Widget::makeSubWidget() {
+    Widget* widget = new Widget(windowLayout);
+    subWidgets.push_back(widget);
+    return widget;
 }
 
-void Widget::requestBGMeshUpdate() {
-    Window* window = parentWindow;
-    Widget* self = this;
+Widget* Widget::hitTest(const std::vector<Widget*>& widgets, float x, float y) {
+    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
+        Widget* widget = *it;
 
-    window->updateMeshForWidget(self);
+        if (!widget->subWidgets.empty()) {
+            if (Widget* child = hitTest(widget->subWidgets, x, y))
+                return child;
+        }
+
+        if (widget->bgGeometry->inInside(x, y)) {
+            return widget;
+        }
+    }
+    return nullptr;
 }
 
-void Widget::setAbsTransform(glm::vec2 newBottomLeft, glm::vec2 newTopRight) {
-    bgGeometry->setAbsTransform(newBottomLeft, newTopRight);
+void Widget::setPos(float x, float y) {
+    if (bgGeometry->xPos.isBound()) {
+        bgGeometry->xPos.setScale(x);
+    } else {
+        bgGeometry->xPos.setAbsValue(x);
+    }
 
-    requestBGMeshUpdate();
+    if (bgGeometry->yPos.isBound()) {
+        bgGeometry->yPos.setScale(y);
+    } else {
+        bgGeometry->yPos.setAbsValue(y);
+    }
 
-    updateHoverState(cursorX, cursorY);
+    updateBackground();
 }
 
-void Widget::setRelPos(float relXOffset, float relYOffset) {
-    bgGeometry->setRelPos(relXOffset, relYOffset, parentWindow->width, parentWindow->height);
+void Widget::setSize(float width, float height) {
+    if (bgGeometry->width.isBound()) {
+        bgGeometry->width.setScale(width);
+    } else {
+        bgGeometry->width.setAbsValue(width);
+    }
 
-    requestBGMeshUpdate();
+    if (bgGeometry->height.isBound()) {
+        bgGeometry->height.setScale(height);
+    } else {
+        bgGeometry->height.setAbsValue(height);
+    }
 
-    updateHoverState(cursorX, cursorY);
+    updateBackground();
 }
 
-void Widget::setRelSize(float relWidth, float relHeight) {
-    bgGeometry->setRelSize(relWidth, relHeight, parentWindow->width, parentWindow->height);
+void Widget::updateBGMesh() {
+    // Pull the latest background geometry data to update the mesh with
+    float left = bgGeometry->xPos.getAbsValue();
+    float top = bgGeometry->yPos.getAbsValue();
+    float right = left + bgGeometry->width.getAbsValue();
+    float bottom = top + bgGeometry->height.getAbsValue();
 
-    requestBGMeshUpdate();
+    Vertex2D vertices[4] = {
+        {{left, top}, bgColor, {0.0f, 1.0f}},
+        {{right, top}, bgColor, {1.0f, 1.0f}},
+        {{right, bottom}, bgColor, {1.0f, 0.0f}},
+        {{left, bottom}, bgColor, {0.0f, 0.0f}}
+    };
 
-    updateHoverState(cursorX, cursorY);
+    // Make sure to initialize the background mesh if it hasn't been
+    if (!bgMesh) {
+        unsigned int indices[6] = {0,1,2, 2,3,0};
+
+        VertexArray* va = new VertexArray();
+        VertexBuffer* vb = new VertexBuffer(vertices, sizeof(Vertex2D) * 4);
+
+        VertexBufferLayout* layout = new VertexBufferLayout();
+        layout->Push<Vertex2D>(1);
+
+        va->Bind();
+        vb->Bind();
+        va->AddBuffer(*vb, *layout);
+
+        IndexBuffer* ib = new IndexBuffer(indices, 6);
+
+        bgMesh = new Mesh(va, vb, ib);
+    } else {
+        bgMesh->UpdateVertices(vertices, sizeof(Vertex2D) * 4, 0);
+    }
 }
 
-void Widget::setAbsRadius(float radius) {
-    bgGeometry->setAbsRadius(radius);
+void Widget::updateBGShader() {
+    bgShader->Bind();
+    bgShader->SetUniform2f("u_TopLeftPos", bgGeometry->xPos.getAbsValue(),
+                                           bgGeometry->yPos.getAbsValue());
+    bgShader->SetUniform2f("u_Size", bgGeometry->width.getAbsValue(),
+                                     bgGeometry->height.getAbsValue());
+    bgShader->SetUniform1f("u_Radius", bgGeometry->getCornerRadius());
 
-    requestBGMeshUpdate();
+    glm::mat4 proj = glm::ortho(0.0f,
+                                windowLayout.width.getAbsValue() * 1.0f,
+                                windowLayout.height.getAbsValue() * 1.0f,
+                                0.0f, -1.0f, 1.0f);
+
+    bgShader->SetUniformMat4f("u_Proj", proj);
+    bgShader->Unbind();
 }
 
-void Widget::setRelRadius(float radius) {
-    bgGeometry->setRelRadius(radius);
-
-    requestBGMeshUpdate();
+void Widget::updateBackground() {
+    updateBGMesh();
+    updateBGShader();
+    updateHoverState();
 }
 
 void Widget::setResizable() {
-    regMouseHover = true;
-    regMouseEnter = true;
-    regMouseLeave = true;
-    regMouseDown = true;
-    regMouseUp = true;
-
     canResizeLeft = true;
     canResizeRight = true;
     canResizeBottom = true;
     canResizeTop = true;
 }
 
-void Widget::setResizable(std::vector<RectPos> exclusions) {
-    regMouseHover = true;
-    regMouseEnter = true;
-    regMouseLeave = true;
-    regMouseDown = true;
-    regMouseUp = true;
-
-    for (RectPos exclusion : exclusions) {
-        switch (exclusion) {
-            case None:
-                break;
-            case Inside:
-                break;
-            case TopLeft:
-                canResizeTop = false;
-                canResizeLeft = false;
-                break;
-            case TopRight:
-                canResizeTop = false;
-                canResizeRight = false;
-                break;
-            case BottomRight:
-                canResizeBottom = false;
-                canResizeRight = false;
-                break;
-            case BottomLeft:
-                canResizeBottom = false;
-                canResizeLeft = false;
-                break;
-            case Top:
-                canResizeTop = false;
-                break;
-            case Right:
-                canResizeRight = false;
-                break;
-            case Bottom:
-                canResizeBottom = false;
-                break;
-            case Left:
-                canResizeLeft = false;
-                break;
-        }
-    }
-}
-
-void Widget::setNotResizable() {
-    regMouseHover = false;
-    regMouseEnter = false;
-    regMouseLeave = false;
-    regMouseDown = false;
-    regMouseUp = false;
-
+void Widget::setNonResizable() {
     canResizeLeft = false;
     canResizeRight = false;
     canResizeBottom = false;
     canResizeTop = false;
 }
 
-void Widget::setNotResizable(std::vector<RectPos> exclusions) {
-    if (exclusions.empty()) {
-        regMouseHover = false;
-        regMouseEnter = false;
-        regMouseLeave = false;
-        regMouseDown = false;
-        regMouseUp = false;
+void Widget::setMoveable() {
+    canMove = true;
+}
+
+void Widget::setNonMoveable() {
+    canMove = false;
+}
+
+TransformType Widget::getCursorState() {
+    // Corners should be checked first as edges occupy the same space
+    if (bgGeometry->inTopLeft(cursorX, cursorY) &&
+        canResizeTop && canResizeLeft) {
+        return TransformType::RESIZE_TOP_LEFT;
+    }
+    else if (bgGeometry->inTopRight(cursorX, cursorY) &&
+             canResizeTop && canResizeRight) {
+        return TransformType::RESIZE_TOP_RIGHT;
+    }
+    else if (bgGeometry->inBottomRight(cursorX, cursorY) &&
+             canResizeBottom && canResizeRight) {
+        return TransformType::RESIZE_BOTTOM_RIGHT;
+    }
+    else if (bgGeometry->inBottomLeft(cursorX, cursorY) &&
+             canResizeBottom && canResizeLeft) {
+        return TransformType::RESIZE_BOTTOM_LEFT;
     }
 
-    for (RectPos exclusion : exclusions) {
-        switch (exclusion) {
-            case None:
-                break;
-            case Inside:
-                break;
-            case TopLeft:
-                canResizeTop = true;
-                canResizeLeft = true;
-                break;
-            case TopRight:
-                canResizeTop = true;
-                canResizeRight = true;
-                break;
-            case BottomRight:
-                canResizeBottom = true;
-                canResizeRight = true;
-                break;
-            case BottomLeft:
-                canResizeBottom = true;
-                canResizeLeft = true;
-                break;
-            case Top:
-                canResizeTop = true;
-                break;
-            case Right:
-                canResizeRight = true;
-                break;
-            case Bottom:
-                canResizeBottom = true;
-                break;
-            case Left:
-                canResizeLeft = true;
-                break;
+    // Edges should be checked second as the inside occupies the same space
+    else if (bgGeometry->inTop(cursorY) && canResizeTop) {
+        return TransformType::RESIZE_TOP;
+    }
+    else if (bgGeometry->inRight(cursorX) && canResizeRight) {
+        return TransformType::RESIZE_RIGHT;
+    }
+    else if (bgGeometry->inBottom(cursorY) && canResizeBottom) {
+        return TransformType::RESIZE_BOTTOM;
+    }
+    else if (bgGeometry->inLeft(cursorX) && canResizeLeft) {
+        return TransformType::RESIZE_LEFT;
+    }
+
+    // Finally, check if the cursor is even inside the rectangle
+    else if (bgGeometry->inInside(cursorX, cursorY) && canMove) {
+        return TransformType::MOVE;
+    }
+    else {
+        return TransformType::IDLE;
+    }
+
+}
+
+void Widget::setTransformStates(std::vector<TransformType> transformTypes, bool state) {
+    for (TransformType transformType : transformTypes) {
+        switch (transformType) {
+        case MOVE:
+            canMove = state;
+        case RESIZE_TOP:
+            canResizeTop = state;
+            break;
+        case RESIZE_RIGHT:
+            canResizeRight = state;
+            break;
+        case RESIZE_BOTTOM:
+            canResizeBottom = state;
+            break;
+        case RESIZE_LEFT:
+            canResizeLeft = state;
+            break;
+        case RESIZE_TOP_LEFT:
+            canResizeTop = state;
+            canResizeLeft = state;
+            break;
+        case RESIZE_TOP_RIGHT:
+            canResizeTop = state;
+            canResizeRight = state;
+            break;
+        case RESIZE_BOTTOM_RIGHT:
+            canResizeBottom = state;
+            canResizeRight = state;
+            break;
+        case RESIZE_BOTTOM_LEFT:
+            canResizeBottom = state;
+            canResizeLeft = state;
+            break;
+        default:
+            assert(false &&
+                   "Widget ERROR: Unsupported item given to setResizableStates in resizeUnits");
+            break;
         }
     }
 }
 
-void Widget::setMoveable() {
-    regMouseHover = true;
-    regMouseEnter = true;
-    regMouseLeave = true;
-    regMouseDown = true;
-    regMouseUp = true;
-
-    canMove = true;
-}
-
-void Widget::setNotMoveable() {
-    if (!canResizeTop && !canResizeLeft && !canResizeRight && !canResizeBottom) {
-        regMouseHover = false;
-        regMouseEnter = false;
-        regMouseLeave = false;
-        regMouseDown = false;
-        regMouseUp = false;
-    }
-
-    canMove = false;
-}
-
-
-void Widget::updateTransformState(float x, float y) {
-    if (bgGeometry->inTopLeft(x, y) && canResizeTop && canResizeLeft) {
-        transformState = TransformState::ResizeTopLeft;
-        vec2TransformCache = bgGeometry->topLeft;
-    }
-    else if (bgGeometry->inTopRight(x, y) && canResizeTop && canResizeRight) {
-        transformState = TransformState::ResizeTopRight;
-        vec2TransformCache = bgGeometry->topRight;
-    }
-    else if (bgGeometry->inBottomRight(x, y) && canResizeBottom && canResizeRight) {
-        transformState = TransformState::ResizeBottomRight;
-
-        vec2TransformCache = bgGeometry->bottomRight;
-    }
-    else if (bgGeometry->inBottomLeft(x, y) && canResizeBottom && canResizeLeft) {
-        transformState = TransformState::ResizeBottomLeft;
-        vec2TransformCache = bgGeometry->bottomLeft;
-    }
-    else if (bgGeometry->inTop(y) && canResizeTop) {
-        transformState = TransformState::ResizeTop;
-        scalarTransformCache = bgGeometry->topLeft.y;
-    }
-    else if (bgGeometry->inRight(x) && canResizeRight) {
-        transformState = TransformState::ResizeRight;
-        scalarTransformCache = bgGeometry->topRight.x;
-    }
-    else if (bgGeometry->inBottom(y) && canResizeBottom) {
-        transformState = TransformState::ResizeBottom;
-        scalarTransformCache = bgGeometry->bottomRight.y;
-    }
-    else if (bgGeometry->inLeft(x) && canResizeLeft) {
-        transformState = TransformState::ResizeLeft;
-        scalarTransformCache = bgGeometry->bottomLeft.x;
-    }
-    else if (bgGeometry->inInside(x, y) && canMove) {
-        transformState = TransformState::Move;
-        vec4TransformCache = glm::vec4(bgGeometry->bottomLeft.x,
-                                       bgGeometry->bottomLeft.y,
-                                       bgGeometry->topRight.x,
-                                       bgGeometry->topRight.y);
-    } else {
-        transformState = TransformState::Idle;
-    }
+void Widget::updateTransformState() {
+    transformState = getCursorState();
 }
 
 void Widget::showHoverTips() {
     hoverTips = true;
-    updateHoverState(cursorX, cursorY);
+    updateHoverState();
 }
 
 void Widget::hideHoverTips() {
     hoverTips = false;
-    updateHoverState(cursorX, cursorY);
+    hoverState = TransformType::IDLE;
 }
 
-void Widget::updateHoverState(float x, float y) {
-    RectPos prevRectPos = hoverState;
-
+void Widget::updateHoverState() {
     if (!hoverTips) {
+        hoverState = TransformType::IDLE;
         return;
     }
 
-    if (bgGeometry->inTopLeft(x, y) && canResizeTop && canResizeLeft) {
-        hoverState = RectPos::TopLeft;
-    }
-    else if (bgGeometry->inTopRight(x, y) && canResizeTop && canResizeRight) {
-        hoverState = RectPos::TopRight;
-    }
-    else if (bgGeometry->inBottomRight(x, y) && canResizeBottom && canResizeRight) {
-        hoverState = RectPos::BottomRight;
-    }
-    else if (bgGeometry->inBottomLeft(x, y) && canResizeBottom && canResizeLeft) {
-        hoverState = RectPos::BottomLeft;
-    }
-    else if (bgGeometry->inTop(y) && canResizeTop) {
-        hoverState = RectPos::Top;
-    }
-    else if (bgGeometry->inRight(x) && canResizeRight) {
-        hoverState = RectPos::Right;
-    }
-    else if (bgGeometry->inBottom(y) && canResizeBottom) {
-        hoverState = RectPos::Bottom;
-    }
-    else if (bgGeometry->inLeft(x) && canResizeLeft) {
-        hoverState = RectPos::Left;
-    }
-    else if (bgGeometry->inInside(x, y) && canMove) {
-        hoverState = RectPos::Inside;
-    }
-    else {
-        hoverState = RectPos::None;
+    hoverState = getCursorState();
+}
+
+void Widget::handleKeyDown(KeyName key, std::vector<ModKeyName> mods) {
+    if (regKeyDown) {
+        onKeyDown(key, mods);
     }
 }
 
-void Widget::onKeyUp(KeyName key, std::vector<ModKeyName> mods) {}
-void Widget::onKeyDown(KeyName key, std::vector<ModKeyName> mods) {}
+void Widget::handleKeyUp(KeyName key, std::vector<ModKeyName> mods) {
+    if (regKeyUp) {
+        onKeyUp(key, mods);
+    }
+}
 
-void Widget::onMouseHover(float x, float y) {
-    printf("mouse hovered on widget\n");
+void Widget::handleMouseMove(float x, float y) {
+    assert(false &&
+           "Widget ERROR: handleMouseMove is not a valid widget event");
+}
+
+void Widget::handleMouseHover(float x, float y) {
+    printf("mouse hovered on widget %d at position (%f, %f)\n", id, x, y);
 
     float dx = x - cursorX;
     float dy = y - cursorY;
 
-    bgGeometry->applyTransform(transformState, x, y, dx, dy);
+    cursorX = x;
+    cursorY = y;
 
-    updateHoverState(x, y);
+    bgGeometry->applyTransform(transformState, cursorX, cursorY, dx, dy);
 
-    requestBGMeshUpdate();
+    updateBackground();
+
+    for (Widget* widget : subWidgets) {
+        widget->onResize(x, y);
+    }
+
+    if (regMouseHover) {
+        onMouseHover(x, y);
+    }
 
     for (GuiListener* listener : listeners) {
         if (listener->regMouseHover) {
             listener->onMouseHover(x, y);
         }
     }
-
-    cursorX = x;
-    cursorY = y;
 }
 
-void Widget::onMouseEnter() {
-    printf("mouse entered widget\n");
+void Widget::handleMouseEnter() {
+    printf("mouse entered widget %d\n", id);
+
+    if (regMouseEnter) {
+        onMouseEnter();
+    }
 
     for (GuiListener* listener : listeners) {
         if (listener->regMouseEnter) {
@@ -348,10 +335,14 @@ void Widget::onMouseEnter() {
     }
 }
 
-void Widget::onMouseLeave() {
-    printf("mouse left widget\n");
+void Widget::handleMouseLeave() {
+    printf("mouse left widget %d\n", id);
 
-    hoverState = RectPos::None;
+    hoverState = TransformType::IDLE;
+
+    if (regMouseLeave) {
+        onMouseLeave();
+    }
 
     for (GuiListener* listener : listeners) {
         if (listener->regMouseLeave) {
@@ -360,97 +351,56 @@ void Widget::onMouseLeave() {
     }
 }
 
-void Widget::onMouseDown(float x, float y, MouseButtonType type) {
+void Widget::handleMouseDown(float x, float y, MouseButtonType type) {
+    cursorX = x;
+    cursorY = y;
+
     switch (type) {
-        case MouseButtonType::MouseLeft:
+        case MouseButtonType::MOUSE_LEFT:
             printf("mouse left down window (%f, %f)\n", x, y);
 
-            updateTransformState(x, y);
+            updateTransformState();
 
-            if (bgGeometry->inInside(x, y)) {
-                for (GuiListener* listener : listeners) {
-                    listener->onMouseDown(x, y, type);
-                }
-            }
             break;
-        case MouseButtonType::MouseRight:
+        case MouseButtonType::MOUSE_RIGHT:
             printf("mouse right down window (%f, %f)\n", x, y);
-
-            for (GuiListener* listener : listeners) {
-                listener->onMouseDown(x, y, type);
-            }
             break;
         default:
-            printf("unhandled mouse down\n");
+            assert(false && "Widget ERROR: Called handleMouseDown with an unknown type\n");
     }
 
-    cursorX = x;
-    cursorY = y;
+    if (bgGeometry->inInside(x, y)) {
+        if (regMouseDown) {
+            onMouseDown(x, y, type);
+        }
+
+        for (GuiListener* listener : listeners) {
+            listener->onMouseDown(x, y, type);
+        }
+    }
 }
 
-void Widget::onMouseUp(float x, float y, MouseButtonType type) {
+void Widget::handleMouseUp(float x, float y, MouseButtonType type) {
+    cursorX = x;
+    cursorY = y;
+
     switch (type) {
-        case MouseButtonType::MouseLeft:
+        case MouseButtonType::MOUSE_LEFT:
             printf("mouse up left (%f, %f)\n", x, y);
-
-            transformState = TransformState::Idle;
-
-            for (GuiListener* listener : listeners) {
-                listener->onMouseUp(x, y, type);
-            }
+            transformState = TransformType::IDLE;
             break;
-        case MouseButtonType::MouseRight:
+        case MouseButtonType::MOUSE_RIGHT:
             printf("mouse up right (%f, %f)\n", x, y);
-
-            for (GuiListener* listener : listeners) {
-                listener->onMouseUp(x, y, type);
-            }
             break;
         default:
-            printf("unhandled mouse up\n");
+            assert(false && "Widget ERROR: Called handleMouseUp with an unknown type\n");
     }
 
-    cursorX = x;
-    cursorY = y;
-}
+    if (regMouseUp) {
+        onMouseUp(x, y, type);
+    }
 
-void Widget::onResize(int width, int height) {
     for (GuiListener* listener : listeners) {
-        if (listener->regResize) {
-            listener->onResize(width, height);
-        }
+        listener->onMouseUp(x, y, type);
     }
-}
-
-void Widget::onReposition(int x, int y) {
-    for (GuiListener* listener : listeners) {
-        if (listener->regReposition) {
-            listener->onReposition(x, y);
-        }
-    }
-}
-
-Widget* Widget::makeSubWidget() {
-    Widget* widget = new Widget(this->parentWindow);
-    subWidgets.push_back(widget);
-    return widget;
-}
-
-Widget* Widget::hitTest(const std::vector<Widget*>& widgets, float x, float y) {
-    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
-        Widget* widget = *it;
-        if (widget->bgGeometry->inInside(x, y)) {
-            if (widget->subWidgets.empty()) {
-                return widget;
-            } else {
-                Widget* hitChild = widget->hitTest(widget->subWidgets, x, y);
-                if (hitChild) {
-                    return hitChild;
-                } else {
-                    return widget;
-                }
-            }
-        }
-    }
-    return nullptr;
 }

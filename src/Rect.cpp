@@ -5,167 +5,146 @@
 #include "Rect.h"
 
 Rect::Rect()
-    : topLeft(0.0f),
-      topRight(0.0f),
-      bottomRight(0.0f),
-      bottomLeft(0.0f),
-      hitTol(5.0f),
-      absRadius(0.0f),
-      relRadius(0.0f),
-      relRadiusFlag(true)
+    : xPos(), yPos(),
+      width(), height(),
+      cornerRadiusWidth(), cornerRadiusHeight(),
+      hitTol(3.0f)
 {}
-
-float Rect::getAbsWidth() const {
-    return topRight.x - topLeft.x;
-}
-
-float Rect::getAbsHeight() const {
-    return bottomLeft.y - topLeft.y;
-}
-
-float Rect::getAbsRadius() const {
-    return absRadius;
-}
 
 bool Rect::eqWithTol(float a, float b) const {
     return std::abs(a - b) <= hitTol;
 }
 
 bool Rect::inInside(float x, float y) const {
-    return x >= topLeft.x - hitTol && x <= bottomRight.x + hitTol &&
-           y >= topLeft.y - hitTol && y <= bottomRight.y + hitTol;
+    float absXPos = xPos.getAbsValue();
+    float absYPos = yPos.getAbsValue();
+    float absWidth = width.getAbsValue();
+    float absHeight = height.getAbsValue();
+
+    return x >= absXPos - hitTol && x <= absXPos + absWidth + hitTol &&
+    y >= absYPos - hitTol && y <= absYPos + absHeight + hitTol;
 }
 
 bool Rect::inTopLeft(float x, float y) const {
-    return eqWithTol(x, topLeft.x) && eqWithTol(y, topLeft.y);
+    float absXPos = xPos.getAbsValue();
+    float absYPos = yPos.getAbsValue();
+
+    return eqWithTol(x, absXPos) && eqWithTol(y, absYPos);
 }
 
 bool Rect::inTopRight(float x, float y) const {
-    return eqWithTol(x, topRight.x) && eqWithTol(y, topRight.y);
+    float absXPos = xPos.getAbsValue();
+    float absYPos = yPos.getAbsValue();
+    float absWidth = width.getAbsValue();
+
+    return eqWithTol(x, absXPos + absWidth) && eqWithTol(y, absYPos);
 }
 
 bool Rect::inBottomRight(float x, float y) const {
-    return eqWithTol(x, bottomRight.x) && eqWithTol(y, bottomRight.y);
+    float absXPos = xPos.getAbsValue();
+    float absYPos = yPos.getAbsValue();
+    float absWidth = width.getAbsValue();
+    float absHeight = height.getAbsValue();
+
+    return eqWithTol(x, absXPos + absWidth) && eqWithTol(y, absYPos + absHeight);
 }
 
 bool Rect::inBottomLeft(float x, float y) const {
-    return eqWithTol(x, bottomLeft.x) && eqWithTol(y, bottomLeft.y);
+    float absXPos = xPos.getAbsValue();
+    float absYPos = yPos.getAbsValue();
+    float absHeight = height.getAbsValue();
+
+    return eqWithTol(x, absXPos) && eqWithTol(y, absYPos + absHeight);
 }
 
 bool Rect::inTop(float y) const {
-    return eqWithTol(y, topLeft.y);
+    float absYPos = yPos.getAbsValue();
+
+    return eqWithTol(y, absYPos);
 }
 
 bool Rect::inRight(float x) const {
-    return eqWithTol(x, topRight.x);
+    float absXPos = xPos.getAbsValue();
+    float absWidth = width.getAbsValue();
+
+    return eqWithTol(x, absXPos + absWidth);
 }
 
 bool Rect::inBottom(float y) const {
-    return eqWithTol(y, bottomRight.y);
+    float absYPos = yPos.getAbsValue();
+    float absHeight = height.getAbsValue();
+
+    return eqWithTol(y, absYPos + absHeight);
 }
 
 bool Rect::inLeft(float x) const {
-    return eqWithTol(x, bottomLeft.x);
+    float absXPos = xPos.getAbsValue();
+
+    return eqWithTol(x, absXPos);
 }
 
-void Rect::setAbsTransform(glm::vec2 newTopLeft, glm::vec2 newBottomRight) {
-    topLeft = newTopLeft;
-
-    topRight = {newBottomRight.x, newTopLeft.y};
-    bottomRight = newBottomRight;
-    bottomLeft = {newTopLeft.x, newBottomRight.y};
+float Rect::getCornerRadius() const {
+    return std::min(cornerRadiusWidth.getAbsValue(),
+                    cornerRadiusHeight.getAbsValue());
 }
 
-void Rect::setRelPos(float relXOffset, float relYOffset, int winWidth, int winHeight) {
-    float width = getAbsWidth();
-    float height = getAbsHeight();
-
-    topLeft.x = (winWidth * relXOffset) / 2;
-    topLeft.y = (winHeight * relYOffset) / 2;
-
-    topRight = {topLeft.x + width, topLeft.y};
-    bottomRight = {topLeft.x + width, topLeft.y + height};
-    bottomLeft = {topLeft.x, topLeft.y + height};
+void Rect::setCornerRadius(float radius) {
+    cornerRadiusWidth.setAbsValue(radius);
+    cornerRadiusHeight.setAbsValue(radius);
 }
 
-void Rect::setRelSize(float relWidth, float relHeight, int winWidth, int winHeight) {
-    float width = relWidth * winWidth;
-    float height = relHeight * winHeight;
-
-    assert(width > 0 && height > 0);
-
-    topRight = {topLeft.x + width, topLeft.y};
-    bottomRight = {topLeft.x + width, topLeft.y + height};
-    bottomLeft = {topLeft.x, topLeft.y + height};
-}
-
-void Rect::setRelRadius(float radius) {
-    relRadius = radius;
-    relRadiusFlag = true;
-
-    absRadius = relRadius * std::min(getAbsWidth(), getAbsHeight());
-}
-
-void Rect::setAbsRadius(float radius) {
-    absRadius = radius;
-    relRadiusFlag = false;
-}
-
-
-void Rect::applyTransform(TransformState transformState, float x, float y, float dx, float dy) {
-    switch (transformState) {
-        case TransformState::Idle:
-            break;
-
-        case TransformState::Move: {
-            topLeft.x += dx;
-            topLeft.y += dy;
-            bottomRight.x += dx;
-            bottomRight.y += dy;
-            break;
-        }
-
-        case TransformState::ResizeTop:
-            topLeft.y = y;
-            break;
-
-        case TransformState::ResizeRight:
-            bottomRight.x = x;
-            break;
-
-        case TransformState::ResizeBottom:
-            bottomRight.y = y;
-            break;
-
-        case TransformState::ResizeLeft:
-            topLeft.x = x;
-            break;
-
-        case TransformState::ResizeTopLeft:
-            topLeft.x = x;
-            topLeft.y = y;
-            break;
-
-        case TransformState::ResizeTopRight:
-            bottomRight.x = x;
-            topLeft.y = y;
-            break;
-
-        case TransformState::ResizeBottomRight:
-            bottomRight.x = x;
-            bottomRight.y = y;
-            break;
-
-        case TransformState::ResizeBottomLeft:
-            topLeft.x = x;
-            bottomRight.y = y;
-            break;
+void Rect::setCornerRadiusScale(float scale) {
+    if (cornerRadiusWidth.getAbsValue() >= cornerRadiusHeight.getAbsValue()) {
+        return cornerRadiusWidth.setScale(scale);
+    } else {
+        return cornerRadiusHeight.setScale(scale);
     }
+}
 
-    topRight = { bottomRight.x, topLeft.y };
-    bottomLeft = { topLeft.x, bottomRight.y };
+void Rect::applyTransform(TransformType transformState, float x, float y, float dx, float dy) {
+    switch (transformState) {
+        case TransformType::IDLE:
+            break;
 
-    if (relRadiusFlag) {
-        absRadius = relRadius * std::min(getAbsWidth(), getAbsHeight());
+        case TransformType::MOVE:
+            xPos.setAbsValue(xPos.getAbsValue() + dx);
+            yPos.setAbsValue(yPos.getAbsValue() + dy);
+            break;
+
+        case TransformType::RESIZE_TOP:
+            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.setAbsValue(y);
+            break;
+        case TransformType::RESIZE_RIGHT:
+            width.setAbsValue(x - xPos.getAbsValue());
+            break;
+        case TransformType::RESIZE_BOTTOM:
+            height.setAbsValue(y - yPos.getAbsValue());
+            break;
+        case TransformType::RESIZE_LEFT:
+            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.setAbsValue(x);
+            break;
+
+        case TransformType::RESIZE_TOP_LEFT:
+            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.setAbsValue(y);
+            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.setAbsValue(x);
+            break;
+        case TransformType::RESIZE_TOP_RIGHT:
+            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.setAbsValue(y);
+            width.setAbsValue(x - xPos.getAbsValue());
+            break;
+        case TransformType::RESIZE_BOTTOM_RIGHT:
+            width.setAbsValue(x - xPos.getAbsValue());
+            height.setAbsValue(y - yPos.getAbsValue());
+            break;
+        case TransformType::RESIZE_BOTTOM_LEFT:
+            height.setAbsValue(y - yPos.getAbsValue());
+            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.setAbsValue(x);
+            break;
     }
 }

@@ -5,22 +5,22 @@ set ROOT_DIR=%~dp0..
 set BUILD_DIR=%ROOT_DIR%\build
 set TOOLCHAIN_FILE=%ROOT_DIR%\toolchain.cmake
 
-REM Default option is to build
+REM Default option is to configure and then build
+if NOT "%2"=="" (
+    echo ~ Either provide no options for a default build or only provide one
+    goto :eof
+)
+
 if "%1"=="" (
     call :configure
     call :build
-    goto end
+    goto :eof
 )
 
-REM Check for recognized options
+REM An option was provided
 if /i "%1"=="configure" (
     call :configure
 ) else if /i "%1"=="build" (
-    call :configure
-    call :build
-) else if /i "%1"=="rebuild" (
-    call :clean
-    call :configure
     call :build
 ) else if /i "%1"=="clean" (
     call :clean
@@ -66,6 +66,3 @@ REM ----------------------------------------
 :clean
 rmdir /s /q "%BUILD_DIR%"
 goto :eof
-
-
-:end

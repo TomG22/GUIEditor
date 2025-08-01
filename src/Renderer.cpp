@@ -3,15 +3,7 @@
 #include "GLDebug.h"
 #include "Renderer.h"
 
-Renderer::Renderer() {
-    GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "Renderer ERROR: OpenGL Error detected: ";
-        printGLError(err);
-        std::cerr << std::endl;
-    }
-}
-
+Renderer::Renderer() {}
 /*
 void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader) const {
     shader.Bind();
