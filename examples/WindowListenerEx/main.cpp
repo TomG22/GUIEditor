@@ -90,14 +90,6 @@ int main(int argc, char* argv[]) {
         listener->onMouseUp = [id](float x, float y, MouseButtonType type) {
             printf("Listener %d: Mouse button %d up at (%f, %f)\n", id, type, x, y);
         };
-
-        listener->onResize = [id](float width, float height) {
-            printf("Listener %d: Parent resized to %f x %f\n", id, width, height);
-        };
-
-        listener->onReposition = [id](float x, float y) {
-            printf("Listener %d: Parent repositioned to (%f, %f)\n", id, x, y);
-        };
     }
 
     winManager.startEventLoop();

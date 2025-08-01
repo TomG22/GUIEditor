@@ -41,9 +41,6 @@ public:
     std::function<void(float x, float y, MouseButtonType type)> onMouseDown;
     std::function<void(float x, float y, MouseButtonType type)> onMouseUp;
 
-    std::function<void(float x, float y)> onReposition;
-    std::function<void(float width, float height)> onResize;
-
     int id;
 
     // Flags for if events are registered for listening

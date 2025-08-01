@@ -306,10 +306,6 @@ void Widget::handleMouseHover(float x, float y) {
 
     updateBackground();
 
-    for (Widget* widget : subWidgets) {
-        widget->onResize(x, y);
-    }
-
     if (regMouseHover) {
         onMouseHover(x, y);
     }
