@@ -31,7 +31,7 @@ bool RelAttribute::recursiveSearch(RelAttribute* node) const {
 }
 
 void RelAttribute::bindRelChild(RelAttribute* node) {
-    assert(relChildren.contains(node) &&
+    assert(!relChildren.contains(node) &&
            "RelAttribute ERROR: Tried to bind a child that is already bound to this node");
 
     assert(!node->recursiveSearch(this) &&
@@ -66,11 +66,19 @@ float RelAttribute::getScale() const {
     return scale;
 }
 
+void RelAttribute::recursiveUpdate() {
+    absValue = scale * relParent->getAbsValue();
+}
+
 void RelAttribute::setAbsValue(float newAbsValue) {
     assert(!relParent &&
            "RelAttribute ERROR: Tried to set the absolute value of a node that is relatively bound");
 
     absValue = newAbsValue;
+
+    for (RelAttribute* child : relChildren) {
+        child->recursiveUpdate();
+    }
 }
 
 void RelAttribute::forceAbsValue(float newAbsValue) {
@@ -79,14 +87,22 @@ void RelAttribute::forceAbsValue(float newAbsValue) {
     if (relParent) {
         scale = absValue / relParent->getAbsValue();
     }
+
+    for (RelAttribute* child : relChildren) {
+        child->recursiveUpdate();
+    }
 }
 
 void RelAttribute::setScale(float newScale) {
-    assert(!relParent &&
+    assert(relParent &&
            "RelAttribute ERROR: Tried to set the scale of a node that is not relatively bound");
 
     scale = newScale;
     absValue = scale * relParent->getAbsValue();
+
+    for (RelAttribute* child : relChildren) {
+        child->recursiveUpdate();
+    }
 }
 
 void RelAttribute::forceScale(float newScale) {
@@ -94,5 +110,9 @@ void RelAttribute::forceScale(float newScale) {
 
     if (relParent) {
         absValue = scale * relParent->getAbsValue();
+    }
+
+    for (RelAttribute* child : relChildren) {
+        child->recursiveUpdate();
     }
 }

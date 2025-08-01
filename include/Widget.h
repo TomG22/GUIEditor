@@ -58,7 +58,6 @@ public:
     // Background methods
     void setPos(float x, float y);
     void setSize(float width, float height);
-
     void setCornerRadius(float radius);
 
     void updateBGMesh();

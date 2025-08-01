@@ -88,63 +88,50 @@ float Rect::getCornerRadius() const {
                     cornerRadiusHeight.getAbsValue());
 }
 
-void Rect::setCornerRadius(float radius) {
-    cornerRadiusWidth.setAbsValue(radius);
-    cornerRadiusHeight.setAbsValue(radius);
-}
-
-void Rect::setCornerRadiusScale(float scale) {
-    if (cornerRadiusWidth.getAbsValue() >= cornerRadiusHeight.getAbsValue()) {
-        return cornerRadiusWidth.setScale(scale);
-    } else {
-        return cornerRadiusHeight.setScale(scale);
-    }
-}
-
 void Rect::applyTransform(TransformType transformState, float x, float y, float dx, float dy) {
     switch (transformState) {
         case TransformType::IDLE:
             break;
 
         case TransformType::MOVE:
-            xPos.setAbsValue(xPos.getAbsValue() + dx);
-            yPos.setAbsValue(yPos.getAbsValue() + dy);
+            xPos.forceAbsValue(xPos.getAbsValue() + dx);
+            yPos.forceAbsValue(yPos.getAbsValue() + dy);
             break;
 
         case TransformType::RESIZE_TOP:
-            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
-            yPos.setAbsValue(y);
+            height.forceAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.forceAbsValue(y);
             break;
         case TransformType::RESIZE_RIGHT:
-            width.setAbsValue(x - xPos.getAbsValue());
+            width.forceAbsValue(x - xPos.getAbsValue());
             break;
         case TransformType::RESIZE_BOTTOM:
-            height.setAbsValue(y - yPos.getAbsValue());
+            height.forceAbsValue(y - yPos.getAbsValue());
             break;
         case TransformType::RESIZE_LEFT:
-            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
-            xPos.setAbsValue(x);
+            width.forceAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.forceAbsValue(x);
             break;
 
         case TransformType::RESIZE_TOP_LEFT:
-            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
-            yPos.setAbsValue(y);
-            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
-            xPos.setAbsValue(x);
+            height.forceAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.forceAbsValue(y);
+            width.forceAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.forceAbsValue(x);
             break;
         case TransformType::RESIZE_TOP_RIGHT:
-            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
-            yPos.setAbsValue(y);
-            width.setAbsValue(x - xPos.getAbsValue());
+            height.forceAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.forceAbsValue(y);
+            width.forceAbsValue(x - xPos.getAbsValue());
             break;
         case TransformType::RESIZE_BOTTOM_RIGHT:
-            width.setAbsValue(x - xPos.getAbsValue());
-            height.setAbsValue(y - yPos.getAbsValue());
+            width.forceAbsValue(x - xPos.getAbsValue());
+            height.forceAbsValue(y - yPos.getAbsValue());
             break;
         case TransformType::RESIZE_BOTTOM_LEFT:
-            height.setAbsValue(y - yPos.getAbsValue());
-            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
-            xPos.setAbsValue(x);
+            height.forceAbsValue(y - yPos.getAbsValue());
+            width.forceAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.forceAbsValue(x);
             break;
     }
 }

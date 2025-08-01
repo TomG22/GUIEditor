@@ -39,7 +39,6 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < winCount; i++) {
         Window* window = winManager.createWindow(static_cast<int>(winWidth),
                                                  static_cast<int>(winHeight));
-        window->hideDecorations();
 
         float hue = float(i) / float(winCount);
         glm::vec3 rgb = hsvToRgb(hue, 1.0f, 1.0f);
@@ -54,8 +53,6 @@ int main(int argc, char* argv[]) {
         window->setPos(xPos, yPos);
         WindowListenerEx* listener = new WindowListenerEx();
         window->registerListener(listener);
-
-        window->show();
 
         int id = listener->id;
 

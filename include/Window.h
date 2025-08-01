@@ -24,9 +24,6 @@ public:
     GLFWcursor* resizeHCursor, *resizeVCursor;
     GLFWcursor* resizeNESWCursor, *resizeNWSECursor;
 
-    bool visible;
-    bool decorated;
-
     TransformType cursorState;
     TransformType nextCursorState;
 
@@ -48,14 +45,8 @@ public:
     Window(float width, float height);
     ~Window();
 
-    void show();
-    void hide();
-
     void setPos(float x, float y);
     void setSize(float width, float height);
-
-    void showDecorations();
-    void hideDecorations();
 
     Widget* makeWidget();
     void addWidget(Widget* widget);

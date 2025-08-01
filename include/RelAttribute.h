@@ -13,10 +13,12 @@ public:
     void bindRelChild(RelAttribute* node);
     void unbindRelChild(RelAttribute* node);
 
+
     float getAbsValue() const;
     float getRelValue() const;
     float getScale() const;
 
+    void recursiveUpdate();
     void setAbsValue(float newAbsValue);
     void forceAbsValue(float newAbsValue);
     void setScale(float newScale);

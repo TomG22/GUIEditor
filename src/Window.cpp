@@ -9,8 +9,6 @@
 
 Window::Window(float width, float height)
     : window(nullptr),
-      decorated(true),
-      visible(false),
       cursorState(TransformType::IDLE),
       nextCursorState(TransformType::IDLE),
       focusedWidget(nullptr),
@@ -19,42 +17,15 @@ Window::Window(float width, float height)
       bgColor(0.3f, 0.9f, 0.9f, 1.0f)
 {
     renderer = new Renderer();
+
     layout.width.setAbsValue(width);
     layout.height.setAbsValue(height);
+
+    initGLFWWindow();
 }
 
 Window::~Window() {
-    if (!window) {
-        return;
-    }
-
     glfwDestroyWindow(window);
-}
-
-void Window::show() {
-    if (visible) {
-        return;
-    }
-
-    if (!window) {
-        initGLFWWindow();
-    } else {
-        glfwShowWindow(window);
-    }
-
-    visible = true;
-}
-
-void Window::hide() {
-    if (!visible) {
-        return;
-    }
-
-    if (window) {
-        glfwHideWindow(window);
-    }
-
-    visible = false;
 }
 
 void Window::setPos(float x, float y) {
@@ -68,10 +39,6 @@ void Window::setPos(float x, float y) {
         layout.yPos.setScale(y);
     } else {
         layout.yPos.setAbsValue(y);
-    }
-
-    if (!window) {
-        return;
     }
 
     glfwSetWindowPos(window, static_cast<int>(layout.xPos.getAbsValue()),
@@ -89,10 +56,6 @@ void Window::setSize(float width, float height) {
         layout.height.setScale(height);
     } else {
         layout.height.setAbsValue(height);
-    }
-
-    if (!window) {
-        return;
     }
 
     glfwSetWindowSize(window, static_cast<int>(layout.width.getAbsValue()),
@@ -187,14 +150,7 @@ void Window::moveBackward(Widget* widget) {
 }
 
 void Window::initGLFWWindow() {
-    assert(!window &&
-           "Window ERROR: Tried to initialize an already initialized window");
-
-    if (decorated) {
-        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-    } else {
-        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-    }
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 
     window = glfwCreateWindow(static_cast<int>(layout.width.getAbsValue()),
                               static_cast<int>(layout.height.getAbsValue()),
@@ -264,28 +220,6 @@ void Window::destroyGLFWWindow() {
     resizeNESWCursor = resizeNWSECursor = resizeAllCursor = nullptr;
 }
 
-void Window::showDecorations() {
-    if (!window || decorated) {
-        return;
-    }
-
-    decorated = true;
-
-    destroyGLFWWindow();
-    initGLFWWindow();
-}
-
-void Window::hideDecorations() {
-    if (!window || decorated) {
-        return;
-    }
-
-    decorated = false;
-
-    destroyGLFWWindow();
-    initGLFWWindow();
-}
-
 void Window::setBGColor(glm::vec4 color) {
     bgColor = color;
 
@@ -295,10 +229,6 @@ void Window::setBGColor(glm::vec4 color) {
 }
 
 void Window::render() {
-    if (!window) {
-        return;
-    }
-
     glfwMakeContextCurrent(window);
 
     renderer->Clear();
@@ -330,18 +260,10 @@ void Window::render() {
 }
 
 bool Window::shouldClose() {
-    if (!window) {
-        return 0;
-    }
-
     return glfwWindowShouldClose(window);
 }
 
 void Window::updateCursor(TransformType cursorState) {
-    if (!window) {
-        return;
-    }
-
     switch (cursorState) {
         case TransformType::IDLE:
             glfwSetCursor(window, arrowCursor);
@@ -486,10 +408,6 @@ void Window::handleMouseButton(int action, MouseButtonType type) {
 
 void Window::mouseButtonCallback(GLFWwindow* window,
                                  int button, int action, int mods) {
-    if (!window) {
-        return;
-    }
-
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     MouseButtonType type = convGLFWMouseType(button);
@@ -504,10 +422,6 @@ void Window::handleReposition(float x, float y) {
 
 void Window::windowPosCallback(GLFWwindow* window,
                                int x, int y) {
-    if (!window) {
-        return;
-    }
-
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (gui) gui->handleReposition(static_cast<float>(x), static_cast<float>(y));
 }
@@ -521,10 +435,6 @@ void Window::handleResize(float width, float height) {
 
 void Window::framebufferSizeCallback(GLFWwindow* window,
                                      int width, int height) {
-    if (!window) {
-        return;
-    }
-
     Window* gui = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (gui) gui->handleResize(static_cast<float>(width), static_cast<float>(height));
 }

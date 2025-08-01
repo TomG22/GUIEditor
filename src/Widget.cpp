@@ -88,7 +88,27 @@ void Widget::setSize(float width, float height) {
     updateBackground();
 }
 
+void Widget::setCornerRadius(float radius) {
+    if (bgGeometry->cornerRadiusWidth.isBound()) {
+        bgGeometry->cornerRadiusWidth.setScale(radius);
+    } else {
+        bgGeometry->cornerRadiusWidth.setAbsValue(radius);
+    }
+
+    if (bgGeometry->cornerRadiusHeight.isBound()) {
+        bgGeometry->cornerRadiusHeight.setScale(radius);
+    } else {
+        bgGeometry->cornerRadiusHeight.setAbsValue(radius);
+    }
+
+    updateBackground();
+}
+
 void Widget::updateBGMesh() {
+    if (!glfwGetCurrentContext()) {
+        return;
+    }
+
     // Pull the latest background geometry data to update the mesh with
     float left = bgGeometry->xPos.getAbsValue();
     float top = bgGeometry->yPos.getAbsValue();
@@ -125,6 +145,10 @@ void Widget::updateBGMesh() {
 }
 
 void Widget::updateBGShader() {
+    if (!glfwGetCurrentContext()) {
+        return;
+    }
+
     bgShader->Bind();
     bgShader->SetUniform2f("u_TopLeftPos", bgGeometry->xPos.getAbsValue(),
                                            bgGeometry->yPos.getAbsValue());

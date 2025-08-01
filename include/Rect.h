@@ -22,8 +22,6 @@ public:
     bool inBottomLeft(float x, float y) const;
 
     float getCornerRadius() const;
-    void setCornerRadius(float radius);
-    void setCornerRadiusScale(float scale);
 
     void applyTransform(TransformType transformState, float x, float y, float dx, float dy);
 
