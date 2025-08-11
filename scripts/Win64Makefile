@@ -17,9 +17,9 @@ $(PROJ_NAME): configure
 build: $(PROJ_NAME)
 
 
-rebuild:
-	cmd.exe /C "build.bat clean"
-	cmd.exe /C "build.bat build"
+rebuild: clean
+	cmd.exe /C "build.bat configure"
+	cmd.exe /c "build.bat build"
 
 
 clean:

@@ -3,7 +3,8 @@
 #include <glm/glm.hpp>
 
 #include "GuiTypes.h"
-#include "RelAttribute.h"
+#include "RelPosAttr.h"
+#include "RelSizeAttr.h"
 
 class Rect {
 public:
@@ -21,14 +22,22 @@ public:
     bool inBottomRight(float x, float y) const;
     bool inBottomLeft(float x, float y) const;
 
+    float getXPos() const;
+    float getYPos() const;
+    float getWidth() const;
+    float getHeight() const;
     float getCornerRadius() const;
+
+    void setPos(float newXPos, float newYPos);
+    void setSize(float newWidth, float newHeight);
+    void setCornerRadius(float newCornerRadius);
 
     void applyTransform(TransformType transformState, float x, float y, float dx, float dy);
 
-    RelAttribute xPos, yPos;
-    RelAttribute width, height;
-    RelAttribute cornerRadiusWidth, cornerRadiusHeight;
-
+//private:
+    RelPosAttr xPos, yPos;
+    RelSizeAttr width, height;
+    RelSizeAttr cornerRadiusWidth, cornerRadiusHeight;
 
     float hitTol;
 };

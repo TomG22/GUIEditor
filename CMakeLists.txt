@@ -35,7 +35,9 @@ add_library(${PROJECT_NAME}
     src/Mesh.cpp
     src/Renderer.cpp
     src/Rect.cpp
-    src/RelAttribute.cpp
+    src/RelAttr.cpp
+    src/RelPosAttr.cpp
+    src/RelSizeAttr.cpp
     src/Shader.cpp
     src/VertexArray.cpp
     src/VertexBuffer.cpp

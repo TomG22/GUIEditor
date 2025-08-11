@@ -18,8 +18,7 @@ Window::Window(float width, float height)
 {
     renderer = new Renderer();
 
-    layout.width.setAbsValue(width);
-    layout.height.setAbsValue(height);
+    layout.setSize(width, height);
 
     initGLFWWindow();
 }
@@ -29,37 +28,17 @@ Window::~Window() {
 }
 
 void Window::setPos(float x, float y) {
-    if (layout.xPos.isBound()) {
-        layout.xPos.setScale(x);
-    } else {
-        layout.xPos.setAbsValue(x);
-    }
+    layout.setPos(x, y);
 
-    if (layout.yPos.isBound()) {
-        layout.yPos.setScale(y);
-    } else {
-        layout.yPos.setAbsValue(y);
-    }
-
-    glfwSetWindowPos(window, static_cast<int>(layout.xPos.getAbsValue()),
-                             static_cast<int>(layout.yPos.getAbsValue()));
+    glfwSetWindowPos(window, static_cast<int>(layout.getXPos()),
+                             static_cast<int>(layout.getYPos()));
 }
 
 void Window::setSize(float width, float height) {
-    if (layout.width.isBound()) {
-        layout.width.setScale(width);
-    } else {
-        layout.width.setAbsValue(width);
-    }
+    layout.setSize(width, height);
 
-    if (layout.height.isBound()) {
-        layout.height.setScale(height);
-    } else {
-        layout.height.setAbsValue(height);
-    }
-
-    glfwSetWindowSize(window, static_cast<int>(layout.width.getAbsValue()),
-                              static_cast<int>(layout.height.getAbsValue()));
+    glfwSetWindowSize(window, static_cast<int>(layout.getWidth()),
+                              static_cast<int>(layout.getHeight()));
 }
 
 Widget* Window::makeWidget() {
@@ -152,8 +131,8 @@ void Window::moveBackward(Widget* widget) {
 void Window::initGLFWWindow() {
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 
-    window = glfwCreateWindow(static_cast<int>(layout.width.getAbsValue()),
-                              static_cast<int>(layout.height.getAbsValue()),
+    window = glfwCreateWindow(static_cast<int>(layout.getWidth()),
+                              static_cast<int>(layout.getHeight()),
                               "GLFW Window", nullptr, nullptr);
 
     // Check if window creation errors
@@ -163,8 +142,8 @@ void Window::initGLFWWindow() {
     }
 
     // Initialize the window's position
-    glfwSetWindowPos(window, static_cast<int>(layout.xPos.getAbsValue()),
-                             static_cast<int>(layout.yPos.getAbsValue()));
+    glfwSetWindowPos(window, static_cast<int>(layout.getXPos()),
+                             static_cast<int>(layout.getYPos()));
 
     // Set the current context to our window
     glfwMakeContextCurrent(window);
@@ -416,8 +395,7 @@ void Window::mouseButtonCallback(GLFWwindow* window,
 }
 
 void Window::handleReposition(float x, float y) {
-    layout.xPos.forceAbsValue(x);
-    layout.yPos.forceAbsValue(y);
+    layout.setPos(x, y);
 }
 
 void Window::windowPosCallback(GLFWwindow* window,
@@ -427,8 +405,7 @@ void Window::windowPosCallback(GLFWwindow* window,
 }
 
 void Window::handleResize(float width, float height) {
-    layout.width.forceAbsValue(width);
-    layout.height.forceAbsValue(height);
+    layout.setSize(width, height);
 
     GLCall(glViewport(0, 0, static_cast<int>(width), static_cast<int>(height)));
 }

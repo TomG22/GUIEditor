@@ -83,9 +83,67 @@ bool Rect::inLeft(float x) const {
     return eqWithTol(x, absXPos);
 }
 
+float Rect::getXPos() const {
+    return xPos.getAbsValue();
+}
+
+float Rect::getYPos() const {
+    return yPos.getAbsValue();
+}
+
+float Rect::getWidth() const {
+    return width.getAbsValue();
+}
+
+float Rect::getHeight() const {
+    return height.getAbsValue();
+}
+
 float Rect::getCornerRadius() const {
     return std::min(cornerRadiusWidth.getAbsValue(),
                     cornerRadiusHeight.getAbsValue());
+}
+
+void Rect::setPos(float newXPos, float newYPos) {
+    if (xPos.isRelBound()) {
+        xPos.setSizeScale(newXPos);
+    } else {
+        xPos.setAbsValue(newXPos);
+    }
+
+    if (yPos.isRelBound()) {
+        yPos.setSizeScale(newYPos);
+    } else {
+        yPos.setAbsValue(newYPos);
+    }
+}
+
+void Rect::setSize(float newWidth, float newHeight) {
+    if (width.isRelBound()) {
+        width.setSizeScale(newWidth);
+    } else {
+        width.setAbsValue(newWidth);
+    }
+
+    if (height.isRelBound()) {
+        height.setSizeScale(newHeight);
+    } else {
+        height.setAbsValue(newHeight);
+    }
+}
+
+void Rect::setCornerRadius(float newCornerRadius) {
+    if (cornerRadiusWidth.isRelBound()) {
+        cornerRadiusWidth.setSizeScale(newCornerRadius);
+    } else {
+        cornerRadiusWidth.setAbsValue(newCornerRadius);
+    }
+
+    if (cornerRadiusHeight.isRelBound()) {
+        cornerRadiusHeight.setSizeScale(newCornerRadius);
+    } else {
+        cornerRadiusHeight.setAbsValue(newCornerRadius);
+    }
 }
 
 void Rect::applyTransform(TransformType transformState, float x, float y, float dx, float dy) {
@@ -94,44 +152,44 @@ void Rect::applyTransform(TransformType transformState, float x, float y, float 
             break;
 
         case TransformType::MOVE:
-            xPos.forceAbsValue(xPos.getAbsValue() + dx);
-            yPos.forceAbsValue(yPos.getAbsValue() + dy);
+            xPos.setAbsValue(xPos.getAbsValue() + dx);
+            yPos.setAbsValue(yPos.getAbsValue() + dy);
             break;
 
         case TransformType::RESIZE_TOP:
-            height.forceAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
-            yPos.forceAbsValue(y);
+            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.setAbsValue(y);
             break;
         case TransformType::RESIZE_RIGHT:
-            width.forceAbsValue(x - xPos.getAbsValue());
+            width.setAbsValue(x - xPos.getAbsValue());
             break;
         case TransformType::RESIZE_BOTTOM:
-            height.forceAbsValue(y - yPos.getAbsValue());
+            height.setAbsValue(y - yPos.getAbsValue());
             break;
         case TransformType::RESIZE_LEFT:
-            width.forceAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
-            xPos.forceAbsValue(x);
+            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.setAbsValue(x);
             break;
 
         case TransformType::RESIZE_TOP_LEFT:
-            height.forceAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
-            yPos.forceAbsValue(y);
-            width.forceAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
-            xPos.forceAbsValue(x);
+            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.setAbsValue(y);
+            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.setAbsValue(x);
             break;
         case TransformType::RESIZE_TOP_RIGHT:
-            height.forceAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
-            yPos.forceAbsValue(y);
-            width.forceAbsValue(x - xPos.getAbsValue());
+            height.setAbsValue(height.getAbsValue() + yPos.getAbsValue() - y);
+            yPos.setAbsValue(y);
+            width.setAbsValue(x - xPos.getAbsValue());
             break;
         case TransformType::RESIZE_BOTTOM_RIGHT:
-            width.forceAbsValue(x - xPos.getAbsValue());
-            height.forceAbsValue(y - yPos.getAbsValue());
+            width.setAbsValue(x - xPos.getAbsValue());
+            height.setAbsValue(y - yPos.getAbsValue());
             break;
         case TransformType::RESIZE_BOTTOM_LEFT:
-            height.forceAbsValue(y - yPos.getAbsValue());
-            width.forceAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
-            xPos.forceAbsValue(x);
+            height.setAbsValue(y - yPos.getAbsValue());
+            width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
+            xPos.setAbsValue(x);
             break;
     }
 }

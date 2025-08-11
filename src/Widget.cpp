@@ -57,49 +57,19 @@ Widget* Widget::hitTest(const std::vector<Widget*>& widgets, float x, float y) {
 }
 
 void Widget::setPos(float x, float y) {
-    if (bgGeometry->xPos.isBound()) {
-        bgGeometry->xPos.setScale(x);
-    } else {
-        bgGeometry->xPos.setAbsValue(x);
-    }
-
-    if (bgGeometry->yPos.isBound()) {
-        bgGeometry->yPos.setScale(y);
-    } else {
-        bgGeometry->yPos.setAbsValue(y);
-    }
-
+    bgGeometry->setPos(x, y);
+    
     updateBackground();
 }
 
 void Widget::setSize(float width, float height) {
-    if (bgGeometry->width.isBound()) {
-        bgGeometry->width.setScale(width);
-    } else {
-        bgGeometry->width.setAbsValue(width);
-    }
-
-    if (bgGeometry->height.isBound()) {
-        bgGeometry->height.setScale(height);
-    } else {
-        bgGeometry->height.setAbsValue(height);
-    }
+    bgGeometry->setSize(width, height);
 
     updateBackground();
 }
 
 void Widget::setCornerRadius(float radius) {
-    if (bgGeometry->cornerRadiusWidth.isBound()) {
-        bgGeometry->cornerRadiusWidth.setScale(radius);
-    } else {
-        bgGeometry->cornerRadiusWidth.setAbsValue(radius);
-    }
-
-    if (bgGeometry->cornerRadiusHeight.isBound()) {
-        bgGeometry->cornerRadiusHeight.setScale(radius);
-    } else {
-        bgGeometry->cornerRadiusHeight.setAbsValue(radius);
-    }
+    bgGeometry->setCornerRadius(radius);
 
     updateBackground();
 }
@@ -110,10 +80,10 @@ void Widget::updateBGMesh() {
     }
 
     // Pull the latest background geometry data to update the mesh with
-    float left = bgGeometry->xPos.getAbsValue();
-    float top = bgGeometry->yPos.getAbsValue();
-    float right = left + bgGeometry->width.getAbsValue();
-    float bottom = top + bgGeometry->height.getAbsValue();
+    float left = bgGeometry->getXPos();
+    float top = bgGeometry->getYPos();
+    float right = left + bgGeometry->getWidth();
+    float bottom = top + bgGeometry->getHeight();
 
     Vertex2D vertices[4] = {
         {{left, top}, bgColor, {0.0f, 1.0f}},
@@ -129,12 +99,12 @@ void Widget::updateBGMesh() {
         VertexArray* va = new VertexArray();
         VertexBuffer* vb = new VertexBuffer(vertices, sizeof(Vertex2D) * 4);
 
-        VertexBufferLayout* layout = new VertexBufferLayout();
-        layout->Push<Vertex2D>(1);
+        VertexBufferLayout* bgGeometry = new VertexBufferLayout();
+        bgGeometry->Push<Vertex2D>(1);
 
         va->Bind();
         vb->Bind();
-        va->AddBuffer(*vb, *layout);
+        va->AddBuffer(*vb, *bgGeometry);
 
         IndexBuffer* ib = new IndexBuffer(indices, 6);
 
@@ -150,15 +120,15 @@ void Widget::updateBGShader() {
     }
 
     bgShader->Bind();
-    bgShader->SetUniform2f("u_TopLeftPos", bgGeometry->xPos.getAbsValue(),
-                                           bgGeometry->yPos.getAbsValue());
-    bgShader->SetUniform2f("u_Size", bgGeometry->width.getAbsValue(),
-                                     bgGeometry->height.getAbsValue());
+    bgShader->SetUniform2f("u_TopLeftPos", bgGeometry->getXPos(),
+                                           bgGeometry->getYPos());
+    bgShader->SetUniform2f("u_Size", bgGeometry->getWidth(),
+                                     bgGeometry->getHeight());
     bgShader->SetUniform1f("u_Radius", bgGeometry->getCornerRadius());
 
     glm::mat4 proj = glm::ortho(0.0f,
-                                windowLayout.width.getAbsValue() * 1.0f,
-                                windowLayout.height.getAbsValue() * 1.0f,
+                                windowLayout.getWidth(),
+                                windowLayout.getHeight(),
                                 0.0f, -1.0f, 1.0f);
 
     bgShader->SetUniformMat4f("u_Proj", proj);
@@ -169,6 +139,10 @@ void Widget::updateBackground() {
     updateBGMesh();
     updateBGShader();
     updateHoverState();
+
+    for (Widget* subWidget : subWidgets) {
+        subWidget->updateBackground();
+    }
 }
 
 void Widget::setResizable() {

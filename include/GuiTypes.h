@@ -4,8 +4,14 @@ class CursorState {
     bool mouseDown;
 };
 
-enum GUIUnit {
-    PIXELS,
+enum RelAttrType {
+    POS,
+    RADIUS,
+    SIZE
+};
+
+enum RelType {
+    ABSOLUTE,
     REL_PARENT,
     REL_SELF,
     REL_SCREEN,
