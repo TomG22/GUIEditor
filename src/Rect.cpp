@@ -6,9 +6,9 @@
 
 Rect::Rect()
     : xPos(), yPos(),
-      width(), height(),
-      cornerRadiusWidth(), cornerRadiusHeight(),
-      hitTol(3.0f)
+    width(), height(),
+    cornerRadiusWidth(), cornerRadiusHeight(),
+    hitTol(3.0f)
 {}
 
 bool Rect::eqWithTol(float a, float b) const {
@@ -22,7 +22,7 @@ bool Rect::inInside(float x, float y) const {
     float absHeight = height.getAbsValue();
 
     return x >= absXPos - hitTol && x <= absXPos + absWidth + hitTol &&
-    y >= absYPos - hitTol && y <= absYPos + absHeight + hitTol;
+        y >= absYPos - hitTol && y <= absYPos + absHeight + hitTol;
 }
 
 bool Rect::inTopLeft(float x, float y) const {
@@ -101,7 +101,7 @@ float Rect::getHeight() const {
 
 float Rect::getCornerRadius() const {
     return std::min(cornerRadiusWidth.getAbsValue(),
-                    cornerRadiusHeight.getAbsValue());
+            cornerRadiusHeight.getAbsValue());
 }
 
 void Rect::setPos(float newXPos, float newYPos) {
@@ -191,5 +191,44 @@ void Rect::applyTransform(TransformType transformState, float x, float y, float 
             width.setAbsValue(width.getAbsValue() + xPos.getAbsValue() - x);
             xPos.setAbsValue(x);
             break;
+    }
+}
+
+void Rect::setRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType) {
+    if (parentRect == nullptr) {
+        return;
+    }
+
+    if (parentAttrType == RelAttrType::POS) {
+        if (childAttrType == RelAttrType::POS) {
+            parentRect->xPos.addRelPosChild(&xPos);
+            parentRect->yPos.addRelPosChild(&yPos);
+            parentRect->width.addRelPosChild(&xPos);
+            parentRect->height.addRelPosChild(&yPos);
+        } else if (childAttrType == RelAttrType::X_POS) {
+            parentRect->xPos.addRelPosChild(&xPos);
+            parentRect->width.addRelPosChild(&xPos);
+        } else if (childAttrType == RelAttrType::Y_POS) {
+            parentRect->yPos.addRelPosChild(&yPos);
+            parentRect->height.addRelPosChild(&yPos);
+        }
+    }
+
+    if (parentAttrType == RelAttrType::SIZE) {
+        if (childAttrType == RelAttrType::SIZE) {
+            parentRect->width.addRelSizeChild(&width);
+            parentRect->height.addRelSizeChild(&height);
+        } else if (childAttrType == RelAttrType::WIDTH) {
+            parentRect->width.addRelSizeChild(&width);
+        } else if (childAttrType == RelAttrType::HEIGHT) {
+            parentRect->height.addRelSizeChild(&height);
+        }
+    }
+
+    if (parentAttrType == RelAttrType::RADIUS) {
+        if (childAttrType == RelAttrType::RADIUS) {
+            parentRect->cornerRadiusWidth.addRelSizeChild(&cornerRadiusWidth);
+            parentRect->cornerRadiusHeight.addRelSizeChild(&cornerRadiusHeight);
+        }
     }
 }

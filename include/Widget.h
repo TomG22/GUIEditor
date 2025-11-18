@@ -17,7 +17,7 @@ public:
     std::vector<Widget*> subWidgets;
 
     Rect& windowLayout;
-    Rect* bgGeometry;
+    Rect* layout;
     int zIndex;
     bool lockZIndex;
 

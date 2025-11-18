@@ -1,4 +1,5 @@
 #include <WindowManager.h>
+#include <GuiTypes.h>
 
 int main() {
     WindowManager winManager = WindowManager();
@@ -19,8 +20,7 @@ int main() {
     widgetA->showHoverTips();
 
     // Bind widgetA's size to the window's size
-    window->layout.width.addRelSizeChild(&widgetA->bgGeometry->width);
-    window->layout.height.addRelSizeChild(&widgetA->bgGeometry->height);
+    widgetA->layout->setRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
 
     widgetA->setSize(0.5f, 0.5f);
 

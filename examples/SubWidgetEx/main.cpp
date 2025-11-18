@@ -19,8 +19,7 @@ int main() {
     widgetA->bgColor = {1.0f, 0.0f, 0.0f, 0.5f};
 
     // Bind widgetA's size to the window's size
-    window->layout.width.addRelSizeChild(&widgetA->bgGeometry->width);
-    window->layout.height.addRelSizeChild(&widgetA->bgGeometry->height);
+    widgetA->layout->setRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     widgetA->setSize(1.0f, 0.5f);
     widgetA->showHoverTips();
 
@@ -30,15 +29,11 @@ int main() {
     subWidgetA->showHoverTips();
 
     // Bind subWidgetA's size to widgetA's size
-    widgetA->bgGeometry->width.addRelSizeChild(&subWidgetA->bgGeometry->width);
-    widgetA->bgGeometry->height.addRelSizeChild(&subWidgetA->bgGeometry->height);
+    subWidgetA->layout->setRelTo(widgetA->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     subWidgetA->setSize(1.0f, 0.5f);
 
-    // Bind subWidgetA's pos to widgetA's pos
-    widgetA->bgGeometry->xPos.addRelPosChild(&subWidgetA->bgGeometry->xPos);
-    widgetA->bgGeometry->yPos.addRelPosChild(&subWidgetA->bgGeometry->yPos);
-    widgetA->bgGeometry->width.addRelPosChild(&subWidgetA->bgGeometry->xPos);
-    widgetA->bgGeometry->height.addRelPosChild(&subWidgetA->bgGeometry->yPos);
+    // Bind subWidgetA's pos to widgetA's position
+    subWidgetA->layout->setRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
     subWidgetA->setPos(0.0f, 0.0f);
 
     // Create widgetB
@@ -47,14 +42,10 @@ int main() {
     widgetB->showHoverTips();
 
     // Bind widgetB to widgetA's position
-    widgetA->bgGeometry->xPos.addRelPosChild(&widgetB->bgGeometry->xPos);
-    widgetA->bgGeometry->yPos.addRelPosChild(&widgetB->bgGeometry->yPos);
-    widgetA->bgGeometry->width.addRelPosChild(&widgetB->bgGeometry->xPos);
-    widgetA->bgGeometry->height.addRelPosChild(&widgetB->bgGeometry->yPos);
+    widgetB->layout->setRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
 
     // Bind widgetB's size to the window's size
-    window->layout.width.addRelSizeChild(&widgetB->bgGeometry->width);
-    window->layout.height.addRelSizeChild(&widgetB->bgGeometry->height);
+    widgetB->layout->setRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     widgetB->setSize(0.5f, 1.0f);
 
     // Create subWidgetB
@@ -62,15 +53,11 @@ int main() {
     subWidgetB->bgColor = {0.0f, 0.0f, 1.0f, 0.5f};
 
     // Bind subWidgetB's size to widgetB's size
-    widgetB->bgGeometry->width.addRelSizeChild(&subWidgetB->bgGeometry->width);
-    widgetB->bgGeometry->height.addRelSizeChild(&subWidgetB->bgGeometry->height);
+    subWidgetB->layout->setRelTo(widgetB->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     subWidgetB->setSize(0.5f, 1.0f);
 
-    // Bind subWidgetB's pos to widgetB's pos
-    widgetB->bgGeometry->xPos.addRelPosChild(&subWidgetB->bgGeometry->xPos);
-    widgetB->bgGeometry->yPos.addRelPosChild(&subWidgetB->bgGeometry->yPos);
-    widgetB->bgGeometry->width.addRelPosChild(&subWidgetB->bgGeometry->xPos);
-    widgetB->bgGeometry->height.addRelPosChild(&subWidgetB->bgGeometry->yPos);
+    // Bind subWidgetB's pos to widgetB's position
+    subWidgetB->layout->setRelTo(widgetB->layout, RelAttrType::POS, RelAttrType::POS);
     subWidgetB->showHoverTips();
 
     winManager.startEventLoop();

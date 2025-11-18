@@ -22,8 +22,8 @@ int main() {
 
     absWidget->setSize(300.0f, 300.0f);
 
-    absWidget->bgGeometry->width.addRelSizeChild(&absWidget->bgGeometry->cornerRadiusWidth);
-    absWidget->bgGeometry->height.addRelSizeChild(&absWidget->bgGeometry->cornerRadiusHeight);
+    absWidget->layout->width.addRelSizeChild(&absWidget->layout->cornerRadiusWidth);
+    absWidget->layout->height.addRelSizeChild(&absWidget->layout->cornerRadiusHeight);
 
     absWidget->setCornerRadius(0.5f);
 
@@ -35,12 +35,12 @@ int main() {
 
     relWidget->bgColor = {0.5f, 0.1f, 0.1f, 1.0f};
 
-    window->layout.width.addRelPosChild(&relWidget->bgGeometry->xPos);
-    window->layout.height.addRelPosChild(&relWidget->bgGeometry->yPos);
+    window->layout.width.addRelPosChild(&relWidget->layout->xPos);
+    window->layout.height.addRelPosChild(&relWidget->layout->yPos);
     relWidget->setPos(0.25f, 0.25f);
 
-    window->layout.width.addRelSizeChild(&relWidget->bgGeometry->width);
-    window->layout.height.addRelSizeChild(&relWidget->bgGeometry->height);
+    window->layout.width.addRelSizeChild(&relWidget->layout->width);
+    window->layout.height.addRelSizeChild(&relWidget->layout->height);
     relWidget->setSize(0.5f, 0.5f);
 
     relWidget->setCornerRadius(20.0f);

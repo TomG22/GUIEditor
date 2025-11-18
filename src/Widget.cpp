@@ -9,7 +9,7 @@
 #include "Window.h"
 
 Widget::Widget(Rect& windowLayout)
-    : bgGeometry(nullptr),
+    : layout(nullptr),
       zIndex(0),
       lockZIndex(true),
       bgMesh(nullptr),
@@ -25,7 +25,7 @@ Widget::Widget(Rect& windowLayout)
       cursorX(0), cursorY(0),
       windowLayout(windowLayout)
 {
-    bgGeometry = new Rect();
+    layout = new Rect();
     bgShader = new Shader("../res/shaders/2DVertexColor.shader");
 
     setResizable();
@@ -50,7 +50,7 @@ Widget* Widget::hitTest(const std::vector<Widget*>& widgets, float x, float y) {
                 return child;
         }
 
-        if (widget->bgGeometry->inInside(x, y)) {
+        if (widget->layout->inInside(x, y)) {
             return widget;
         }
     }
@@ -58,19 +58,19 @@ Widget* Widget::hitTest(const std::vector<Widget*>& widgets, float x, float y) {
 }
 
 void Widget::setPos(float x, float y) {
-    bgGeometry->setPos(x, y);
+    layout->setPos(x, y);
     
     updateBackground();
 }
 
 void Widget::setSize(float width, float height) {
-    bgGeometry->setSize(width, height);
+    layout->setSize(width, height);
 
     updateBackground();
 }
 
 void Widget::setCornerRadius(float radius) {
-    bgGeometry->setCornerRadius(radius);
+    layout->setCornerRadius(radius);
 
     updateBackground();
 }
@@ -81,10 +81,10 @@ void Widget::updateBGMesh() {
     }
 
     // Pull the latest background geometry data to update the mesh with
-    float left = bgGeometry->getXPos();
-    float top = bgGeometry->getYPos();
-    float right = left + bgGeometry->getWidth();
-    float bottom = top + bgGeometry->getHeight();
+    float left = layout->getXPos();
+    float top = layout->getYPos();
+    float right = left + layout->getWidth();
+    float bottom = top + layout->getHeight();
 
     Vertex2D vertices[4] = {
         {{left, top}, bgColor, {0.0f, 1.0f}},
@@ -100,12 +100,12 @@ void Widget::updateBGMesh() {
         VertexArray* va = new VertexArray();
         VertexBuffer* vb = new VertexBuffer(vertices, sizeof(Vertex2D) * 4);
 
-        VertexBufferLayout* bgGeometry = new VertexBufferLayout();
-        bgGeometry->Push<Vertex2D>(1);
+        VertexBufferLayout* layout = new VertexBufferLayout();
+        layout->Push<Vertex2D>(1);
 
         va->Bind();
         vb->Bind();
-        va->AddBuffer(*vb, *bgGeometry);
+        va->AddBuffer(*vb, *layout);
 
         IndexBuffer* ib = new IndexBuffer(indices, 6);
 
@@ -121,11 +121,11 @@ void Widget::updateBGShader() {
     }
 
     bgShader->Bind();
-    bgShader->SetUniform2f("u_TopLeftPos", bgGeometry->getXPos(),
-                                           bgGeometry->getYPos());
-    bgShader->SetUniform2f("u_Size", bgGeometry->getWidth(),
-                                     bgGeometry->getHeight());
-    bgShader->SetUniform1f("u_Radius", bgGeometry->getCornerRadius());
+    bgShader->SetUniform2f("u_TopLeftPos", layout->getXPos(),
+                                           layout->getYPos());
+    bgShader->SetUniform2f("u_Size", layout->getWidth(),
+                                     layout->getHeight());
+    bgShader->SetUniform1f("u_Radius", layout->getCornerRadius());
 
     glm::mat4 proj = glm::ortho(0.0f,
                                 windowLayout.getWidth(),
@@ -170,39 +170,39 @@ void Widget::setNonMoveable() {
 
 TransformType Widget::getCursorState() {
     // Corners should be checked first as edges occupy the same space
-    if (bgGeometry->inTopLeft(cursorX, cursorY) &&
+    if (layout->inTopLeft(cursorX, cursorY) &&
         canResizeTop && canResizeLeft) {
         return TransformType::RESIZE_TOP_LEFT;
     }
-    else if (bgGeometry->inTopRight(cursorX, cursorY) &&
+    else if (layout->inTopRight(cursorX, cursorY) &&
              canResizeTop && canResizeRight) {
         return TransformType::RESIZE_TOP_RIGHT;
     }
-    else if (bgGeometry->inBottomRight(cursorX, cursorY) &&
+    else if (layout->inBottomRight(cursorX, cursorY) &&
              canResizeBottom && canResizeRight) {
         return TransformType::RESIZE_BOTTOM_RIGHT;
     }
-    else if (bgGeometry->inBottomLeft(cursorX, cursorY) &&
+    else if (layout->inBottomLeft(cursorX, cursorY) &&
              canResizeBottom && canResizeLeft) {
         return TransformType::RESIZE_BOTTOM_LEFT;
     }
 
     // Edges should be checked second as the inside occupies the same space
-    else if (bgGeometry->inTop(cursorY) && canResizeTop) {
+    else if (layout->inTop(cursorY) && canResizeTop) {
         return TransformType::RESIZE_TOP;
     }
-    else if (bgGeometry->inRight(cursorX) && canResizeRight) {
+    else if (layout->inRight(cursorX) && canResizeRight) {
         return TransformType::RESIZE_RIGHT;
     }
-    else if (bgGeometry->inBottom(cursorY) && canResizeBottom) {
+    else if (layout->inBottom(cursorY) && canResizeBottom) {
         return TransformType::RESIZE_BOTTOM;
     }
-    else if (bgGeometry->inLeft(cursorX) && canResizeLeft) {
+    else if (layout->inLeft(cursorX) && canResizeLeft) {
         return TransformType::RESIZE_LEFT;
     }
 
     // Finally, check if the cursor is even inside the rectangle
-    else if (bgGeometry->inInside(cursorX, cursorY) && canMove) {
+    else if (layout->inInside(cursorX, cursorY) && canMove) {
         return TransformType::MOVE;
     }
     else {
@@ -301,7 +301,7 @@ void Widget::handleMouseHover(float x, float y) {
     cursorX = x;
     cursorY = y;
 
-    bgGeometry->applyTransform(transformState, cursorX, cursorY, dx, dy);
+    layout->applyTransform(transformState, cursorX, cursorY, dx, dy);
 
     updateBackground();
 
@@ -364,7 +364,7 @@ void Widget::handleMouseDown(float x, float y, MouseButtonType type) {
             assert(false && "Widget ERROR: Called handleMouseDown with an unknown type\n");
     }
 
-    if (bgGeometry->inInside(x, y)) {
+    if (layout->inInside(x, y)) {
         if (regMouseDown) {
             onMouseDown(x, y, type);
         }

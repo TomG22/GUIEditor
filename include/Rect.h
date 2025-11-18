@@ -34,6 +34,8 @@ public:
 
     void applyTransform(TransformType transformState, float x, float y, float dx, float dy);
 
+    void setRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType);
+
 //private:
     RelPosAttr xPos, yPos;
     RelSizeAttr width, height;
