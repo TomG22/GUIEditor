@@ -12,12 +12,9 @@ public:
     virtual void setAbsValue(float newAbsValue) = 0;
     virtual void setSizeScale(float newAbsValue) = 0;
 
-    //RelType getRelType() const;
     float getAbsValue() const;
 
 protected:
-    //RelType relType;
-
     float absValue;
     float sizeScale;
 

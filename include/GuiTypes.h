@@ -6,8 +6,12 @@ class CursorState {
 
 enum RelAttrType {
     POS,
+    X_POS,
+    Y_POS,
     RADIUS,
-    SIZE
+    SIZE,
+    WIDTH,
+    HEIGHT
 };
 
 enum RelType {

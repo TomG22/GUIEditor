@@ -15,14 +15,14 @@ int main() {
 
     // Create widgetA
     Widget* widgetA = window->makeWidget();
-    widgetA->bgColor = {1.0f, 0.0f, 0.0f, 0.5f};
+    widgetA->bgColor = {1.0f, 0.0f, 0.0f, 1.0f};
+    widgetA->showHoverTips();
 
     // Bind widgetA's size to the window's size
-    widgetA->bgGeometry->width.setRelSizeParent(&window->layout.width);
-    widgetA->bgGeometry->height.setRelSizeParent(&window->layout.height);
+    window->layout.width.addRelSizeChild(&widgetA->bgGeometry->width);
+    window->layout.height.addRelSizeChild(&widgetA->bgGeometry->height);
 
     widgetA->setSize(0.5f, 0.5f);
-    widgetA->showHoverTips();
 
     winManager.startEventLoop();
 
