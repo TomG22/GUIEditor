@@ -32,21 +32,19 @@ int main() {
 
     // Relative widget creation
     Widget* relWidget = window->makeWidget();
-
     relWidget->bgColor = {0.5f, 0.1f, 0.1f, 1.0f};
+    relWidget->showHoverTips();
+    relWidget->lockZIndex = false;
 
-    window->layout.width.addRelPosChild(&relWidget->layout->xPos);
-    window->layout.height.addRelPosChild(&relWidget->layout->yPos);
+    // Bind the widget's position to the window's position
+    relWidget->layout->bindRelTo(&window->layout, RelAttrType::POS, RelAttrType::POS);
     relWidget->setPos(0.25f, 0.25f);
 
-    window->layout.width.addRelSizeChild(&relWidget->layout->width);
-    window->layout.height.addRelSizeChild(&relWidget->layout->height);
+    // Bind the widget's size to the window's size
+    relWidget->layout->bindRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     relWidget->setSize(0.5f, 0.5f);
 
     relWidget->setCornerRadius(20.0f);
-
-    relWidget->showHoverTips();
-    relWidget->lockZIndex = false;
 
     winManager.startEventLoop();
 

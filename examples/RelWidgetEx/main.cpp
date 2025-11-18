@@ -20,7 +20,7 @@ int main() {
     widgetA->showHoverTips();
 
     // Bind widgetA's size to the window's size
-    widgetA->layout->setRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    widgetA->layout->bindRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
 
     widgetA->setSize(0.5f, 0.5f);
 

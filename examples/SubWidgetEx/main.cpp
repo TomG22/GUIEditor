@@ -19,7 +19,7 @@ int main() {
     widgetA->bgColor = {1.0f, 0.0f, 0.0f, 0.5f};
 
     // Bind widgetA's size to the window's size
-    widgetA->layout->setRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    widgetA->layout->bindRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     widgetA->setSize(1.0f, 0.5f);
     widgetA->showHoverTips();
 
@@ -29,11 +29,11 @@ int main() {
     subWidgetA->showHoverTips();
 
     // Bind subWidgetA's size to widgetA's size
-    subWidgetA->layout->setRelTo(widgetA->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    subWidgetA->layout->bindRelTo(widgetA->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     subWidgetA->setSize(1.0f, 0.5f);
 
     // Bind subWidgetA's pos to widgetA's position
-    subWidgetA->layout->setRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
+    subWidgetA->layout->bindRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
     subWidgetA->setPos(0.0f, 0.0f);
 
     // Create widgetB
@@ -42,23 +42,23 @@ int main() {
     widgetB->showHoverTips();
 
     // Bind widgetB to widgetA's position
-    widgetB->layout->setRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
+    widgetB->layout->bindRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
 
     // Bind widgetB's size to the window's size
-    widgetB->layout->setRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    widgetB->layout->bindRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     widgetB->setSize(0.5f, 1.0f);
 
     // Create subWidgetB
     Widget* subWidgetB = widgetB->makeSubWidget();
     subWidgetB->bgColor = {0.0f, 0.0f, 1.0f, 0.5f};
+    subWidgetB->showHoverTips();
 
     // Bind subWidgetB's size to widgetB's size
-    subWidgetB->layout->setRelTo(widgetB->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    subWidgetB->layout->bindRelTo(widgetB->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     subWidgetB->setSize(0.5f, 1.0f);
 
     // Bind subWidgetB's pos to widgetB's position
-    subWidgetB->layout->setRelTo(widgetB->layout, RelAttrType::POS, RelAttrType::POS);
-    subWidgetB->showHoverTips();
+    subWidgetB->layout->bindRelTo(widgetB->layout, RelAttrType::POS, RelAttrType::POS);
 
     winManager.startEventLoop();
 

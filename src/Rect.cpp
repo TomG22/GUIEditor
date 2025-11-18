@@ -194,7 +194,7 @@ void Rect::applyTransform(TransformType transformState, float x, float y, float 
     }
 }
 
-void Rect::setRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType) {
+void Rect::bindRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType) {
     if (parentRect == nullptr) {
         return;
     }
