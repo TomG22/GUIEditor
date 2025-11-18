@@ -1,13 +1,27 @@
 @echo off
+REM ====================================================
+REM   CMake Build Script for Windows
+REM   Usage:
+REM     build.bat              -> configure + build
+REM     build.bat configure    -> only configure
+REM     build.bat build        -> only build
+REM     build.bat clean        -> remove build directory
+REM ====================================================
 
-REM Define relative paths
+
+REM -----------------------------
+REM   Define relative paths
+REM -----------------------------
 set ROOT_DIR=%~dp0..
 set BUILD_DIR=%ROOT_DIR%\build
 set TOOLCHAIN_FILE=%ROOT_DIR%\toolchain.cmake
 
-REM Default option is to configure and then build
+
+REM -----------------------------
+REM   Handle arguments
+REM -----------------------------
 if NOT "%2"=="" (
-    echo ~ Either provide no options for a default build or only provide one
+    echo ~ Build ERROR: Provide either no arguments for a default build or one of: configure ^| build ^| clean
     goto :eof
 )
 
@@ -17,52 +31,48 @@ if "%1"=="" (
     goto :eof
 )
 
-REM An option was provided
 if /i "%1"=="configure" (
     call :configure
 ) else if /i "%1"=="build" (
     call :build
 ) else if /i "%1"=="clean" (
     call :clean
+) else if /i "%1"=="run" (
+    call :run
 ) else (
-    echo ~ Unrecognized option
-    call :build
+    echo ~ Build ERROR: Unrecognized argument: "%1"
+    echo   Valid options: configure ^| build ^| clean
 )
-
 
 goto :eof
 
 
-REM FUNCTION DEFINITIONS
-
-
-REM ----------------------------------------
-REM CMake configuration step
-REM ----------------------------------------
+REM ====================================================
+REM   CMake configuration step
+REM   - Creates the build directory if it doesn't exist
+REM   - Runs CMake to configure the project
+REM ====================================================
 :configure
-
 if not exist "%BUILD_DIR%" (
     mkdir "%BUILD_DIR%"
 )
-
 cmake -S "%ROOT_DIR%" -B "%BUILD_DIR%" -DCMAKE_TOOLCHAIN_FILE="%TOOLCHAIN_FILE%"
-
 goto :eof
 
 
-REM ----------------------------------------
-REM CMake build step
-REM ----------------------------------------
+REM ====================================================
+REM   CMake build step
+REM   - Builds the project from the configured files
+REM ====================================================
 :build
-
 cmake --build "%BUILD_DIR%"
-
 goto :eof
 
 
-REM ----------------------------------------
-REM Delete the build dir
-REM ----------------------------------------
+REM ====================================================
+REM   Clean step
+REM   - Deletes the entire build directory and contents
+REM ====================================================
 :clean
 rmdir /s /q "%BUILD_DIR%"
 goto :eof

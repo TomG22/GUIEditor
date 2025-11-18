@@ -1,4 +1,0 @@
-#!/bin/bash
-
-make -f Win64Makefile
-../build/debug/GUIEditor.exe

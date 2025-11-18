@@ -1,29 +1,21 @@
 PROJ_NAME := GUIEditor
+LIBRARY := ../build/Debug/$(PROJ_NAME).lib
 
-
-###  Windows makefile targets ###
-
-all: $(PROJ_NAME)
-
-
-configure:
-	cmd.exe /C "build.bat configure"
-
-
-$(PROJ_NAME): configure
+### User-facing target ###
+build:
 	cmd.exe /C "build.bat build"
 
 
-build: $(PROJ_NAME)
-
-
-rebuild: clean
+### Rebuild from scratch ###
+rebuild: 
+	cmd.exe /C "build.bat clean"
 	cmd.exe /C "build.bat configure"
-	cmd.exe /c "build.bat build"
+	cmd.exe /C "build.bat build"
 
 
+### Clean ###
 clean:
 	cmd.exe /C "build.bat clean"
 
 
-.PHONY: all configure $(PROJ_NAME) build rebuild clean
+.PHONY: build run rebuild clean

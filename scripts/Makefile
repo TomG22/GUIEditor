@@ -2,6 +2,7 @@ PROJ_NAME := GUIEditor
 ROOT_DIR :=	..
 BUILD_DIR := $(ROOT_DIR)/build
 TOOLCHAIN_FILE := $(ROOT_DIR)/toolchain.cmake
+MY_CMAKE := cmake
 
 
 ### Unix makefile targets ###
@@ -18,7 +19,7 @@ configure:
 
 # CMake build step
 $(PROJ_NAME): configure
-	$(MY_CMAKE) --$(buildBUILD_DIR)
+	$(MY_CMAKE) --build $(BUILD_DIR)
 
 
 rebuild: clean $(PROJ_NAME)
