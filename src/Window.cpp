@@ -14,7 +14,7 @@ Window::Window(float width, float height)
       focusedWidget(nullptr),
       hoveredWidget(nullptr),
       hitWidget(nullptr),
-      bgColor(0.3f, 0.9f, 0.9f, 1.0f)
+      bgColor(0.0f, 0.0f, 0.0f, 1.0f)
 {
     renderer = new Renderer();
 
@@ -39,6 +39,11 @@ void Window::setSize(float width, float height) {
 
     glfwSetWindowSize(window, static_cast<int>(layout.getWidth()),
                               static_cast<int>(layout.getHeight()));
+
+
+    for (Widget* widget : widgets) {
+        widget->updateBackground();
+    }
 }
 
 Widget* Window::makeWidget() {
@@ -197,6 +202,10 @@ void Window::destroyGLFWWindow() {
 
     arrowCursor = resizeHCursor = resizeVCursor =
     resizeNESWCursor = resizeNWSECursor = resizeAllCursor = nullptr;
+}
+
+void Window::maximize() {
+    glfwMaximizeWindow(window);
 }
 
 void Window::setBGColor(glm::vec4 color) {
@@ -406,6 +415,10 @@ void Window::windowPosCallback(GLFWwindow* window,
 
 void Window::handleResize(float width, float height) {
     layout.setSize(width, height);
+
+    for (Widget* widget : widgets) {
+        widget->updateBackground();
+    }
 
     GLCall(glViewport(0, 0, static_cast<int>(width), static_cast<int>(height)));
 }

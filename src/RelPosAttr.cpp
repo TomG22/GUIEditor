@@ -69,4 +69,8 @@ void RelPosAttr::calcSizeScale() {
     if (isRelBound() && relSizeParent->getAbsValue() != 0) {
         sizeScale = (absValue - relPosParent->getAbsValue()) / relSizeParent->getAbsValue();
     }
+
+    for (RelPosAttr* relPosChild : relPosChildren) {
+        relPosChild->calcAbsValue();
+    }
 }

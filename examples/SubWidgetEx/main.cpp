@@ -8,46 +8,70 @@ int main() {
 
     Window* window = winManager.createWindow(static_cast<int>(width),
                                              static_cast<int>(height));
+    window->maximize();
+    window->setBGColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 
     float xPos = winManager.screenWidth / 2.0f - width / 2.0f;
     float yPos = winManager.screenHeight / 2.0f - height / 2.0f;
 
+    // Create widgetA
     Widget* widgetA = window->makeWidget();
     widgetA->bgColor = {1.0f, 0.0f, 0.0f, 0.5f};
-    window->layout.width.addRelSizeChild(&widgetA->bgGeometry->width);
-    window->layout.height.addRelSizeChild(&widgetA->bgGeometry->height);
+
+    // Bind widgetA's size to the window's size
+    widgetA->bgGeometry->width.setRelSizeParent(&window->layout.width);
+    widgetA->bgGeometry->height.setRelSizeParent(&window->layout.height);
     widgetA->setSize(1.0f, 0.5f);
     widgetA->showHoverTips();
 
+    // Create subWidgetA
     Widget* subWidgetA = widgetA->makeSubWidget();
     subWidgetA->bgColor = {1.0f, 0.0f, 0.0f, 0.5f};
-    widgetA->bgGeometry->width.addRelSizeChild(&subWidgetA->bgGeometry->width);
-    widgetA->bgGeometry->height.addRelSizeChild(&subWidgetA->bgGeometry->height);
+
+    // Bind subWidgetA's size to widgetA's size
+    subWidgetA->bgGeometry->width.setRelSizeParent(&widgetA->bgGeometry->width);
+    subWidgetA->bgGeometry->height.setRelSizeParent(&widgetA->bgGeometry->height);
     subWidgetA->setSize(1.0f, 0.5f);
-    widgetA->bgGeometry->xPos.addRelPosChild(&subWidgetA->bgGeometry->xPos);
-    widgetA->bgGeometry->yPos.addRelPosChild(&subWidgetA->bgGeometry->yPos);
-    widgetA->bgGeometry->width.addRelPosChild(&subWidgetA->bgGeometry->xPos);
-    widgetA->bgGeometry->width.addRelPosChild(&subWidgetA->bgGeometry->yPos);
+
+    // Bind subWidgetA's pos to widgetA's pos
+    subWidgetA->bgGeometry->xPos.setRelPosParent(&widgetA->bgGeometry->xPos);
+    subWidgetA->bgGeometry->yPos.setRelPosParent(&widgetA->bgGeometry->yPos);
+    subWidgetA->bgGeometry->width.setRelSizeParent(&widgetA->bgGeometry->width);
+    subWidgetA->bgGeometry->height.setRelSizeParent(&widgetA->bgGeometry->height);
     subWidgetA->setPos(0.0f, 0.0f);
     subWidgetA->showHoverTips();
 
-    Widget* widgetB = window->makeWidget();
+    // Create widgetB
+    Widget* widgetB = widgetA->makeSubWidget();
     widgetB->bgColor = {0.0f, 0.0f, 1.0f, 0.5f};
-    window->layout.width.addRelSizeChild(&widgetB->bgGeometry->width);
-    window->layout.height.addRelSizeChild(&widgetB->bgGeometry->height);
+
+    // Bind widgetB to widgetA's position
+    widgetB->bgGeometry->xPos.setRelPosParent(&widgetA->bgGeometry->xPos);
+    widgetB->bgGeometry->yPos.setRelPosParent(&widgetA->bgGeometry->yPos);
+    widgetB->bgGeometry->width.setRelSizeParent(&widgetA->bgGeometry->width);
+    widgetB->bgGeometry->height.setRelSizeParent(&widgetA->bgGeometry->height);
+
+    // Bind widgetB's size to the window's size
+    widgetB->bgGeometry->width.setRelSizeParent(&window->layout.width);
+    widgetB->bgGeometry->height.setRelSizeParent(&window->layout.height);
     widgetB->setSize(0.5f, 1.0f);
     widgetB->showHoverTips();
 
+    // Create subWidgetB
     Widget* subWidgetB = widgetB->makeSubWidget();
     subWidgetB->bgColor = {0.0f, 0.0f, 1.0f, 0.5f};
-    widgetB->bgGeometry->width.addRelSizeChild(&subWidgetB->bgGeometry->width);
-    widgetB->bgGeometry->height.addRelSizeChild(&subWidgetB->bgGeometry->height);
+
+    // Bind subWidgetB's size to widgetB's size
+    //
+    subWidgetB->bgGeometry->width.setRelSizeParent(&widgetB->bgGeometry->width);
+    subWidgetB->bgGeometry->height.setRelSizeParent(&widgetB->bgGeometry->height);
     subWidgetB->setSize(0.5f, 1.0f);
-    widgetB->bgGeometry->xPos.addRelPosChild(&subWidgetB->bgGeometry->xPos);
-    widgetB->bgGeometry->yPos.addRelPosChild(&subWidgetB->bgGeometry->yPos);
-    widgetB->bgGeometry->width.addRelPosChild(&subWidgetB->bgGeometry->xPos);
-    widgetB->bgGeometry->width.addRelPosChild(&subWidgetB->bgGeometry->yPos);
-    subWidgetB->setPos(0.0f, 0.0f);
+
+    // Bind subWidgetB's pos to widgetB's pos
+    subWidgetB->bgGeometry->xPos.setRelPosParent(&widgetB->bgGeometry->xPos);
+    subWidgetB->bgGeometry->yPos.setRelPosParent(&widgetB->bgGeometry->xPos);
+    subWidgetB->bgGeometry->width.setRelSizeParent(&widgetB->bgGeometry->width);
+    subWidgetB->bgGeometry->height.setRelSizeParent(&widgetB->bgGeometry->height);
     subWidgetB->showHoverTips();
 
     winManager.startEventLoop();

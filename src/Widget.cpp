@@ -37,6 +37,7 @@ Widget::Widget(Rect& windowLayout)
 Widget* Widget::makeSubWidget() {
     Widget* widget = new Widget(windowLayout);
     subWidgets.push_back(widget);
+
     return widget;
 }
 

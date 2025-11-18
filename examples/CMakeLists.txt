@@ -1,3 +1,4 @@
 add_subdirectory(WindowListenerEx)
 add_subdirectory(WidgetEx)
 add_subdirectory(SubWidgetEx)
+add_subdirectory(RelWidgetEx)

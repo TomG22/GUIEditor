@@ -59,6 +59,7 @@ public:
     void initGLFWWindow();
     void destroyGLFWWindow();
     void setBGColor(glm::vec4 color);
+    void maximize();
     void render();
     bool shouldClose();
 

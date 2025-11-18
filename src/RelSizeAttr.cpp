@@ -22,6 +22,8 @@ void RelSizeAttr::setSizeScale(float newSizeScale) {
 
 void RelSizeAttr::setRelSizeParent(RelSizeAttr* sizeAttr) {
     relSizeParent = sizeAttr;
+
+    calcAbsValue();
 }
 
 void RelSizeAttr::removeRelSizeParent() {
@@ -69,5 +71,13 @@ void RelSizeAttr::calcAbsValue() {
 void RelSizeAttr::calcSizeScale() {
     if (isRelBound() && relSizeParent->getAbsValue() != 0) {
         sizeScale = absValue / relSizeParent->getAbsValue();
+    }
+
+    for (RelPosAttr* relPosChild : relPosChildren) {
+        relPosChild->calcAbsValue();
+    }
+
+    for (RelSizeAttr* relSizeChild : relSizeChildren) {
+        relSizeChild->calcAbsValue();
     }
 }
