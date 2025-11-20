@@ -219,8 +219,12 @@ void Window::setBGColor(glm::vec4 color) {
 void Window::render() {
     glfwMakeContextCurrent(window);
 
-    renderer->Clear();
+    if (onRender) {
+        onRender();
+    }
 
+
+    renderer->Clear();
 
     std::stack<Widget*> stack;
 

@@ -5,6 +5,8 @@ LIBRARY := ../build/Debug/$(PROJ_NAME).lib
 build:
 	cmd.exe /C "build.bat build"
 
+configure:
+	cmd.exe /C "build.bat configure"
 
 ### Rebuild from scratch ###
 rebuild: 
@@ -18,4 +20,4 @@ clean:
 	cmd.exe /C "build.bat clean"
 
 
-.PHONY: build run rebuild clean
+.PHONY: build configure rebuild clean

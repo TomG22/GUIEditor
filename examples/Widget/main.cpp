@@ -6,7 +6,7 @@ int main() {
     float width = 1440.0f;
     float height = 700.0f;
 
-    // Window creation
+    // Create a window
     Window* window = winManager.createWindow(static_cast<int>(width),
                                              static_cast<int>(height));
 

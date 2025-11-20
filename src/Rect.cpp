@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <stdexcept>
 
 #include "Rect.h"
 
@@ -194,41 +195,224 @@ void Rect::applyTransform(TransformType transformState, float x, float y, float 
     }
 }
 
+/*
+void Rect::bindRelPosTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType) {
+
+}
+*/
+
 void Rect::bindRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType) {
-    if (parentRect == nullptr) {
+    if (!parentRect) return;
+
+    if (!RelAttr::isBindable(parentAttrType, childAttrType)) {
+        throw std::runtime_error("Rect ERROR: Attempted to bind an invalid combination of attributes");
+    }
+
+    // Position Attributes
+
+    // Child's general position attribute bound to parent's general position attribute
+    if (childAttrType == RelAttrType::POS && parentAttrType == RelAttrType::POS) {
+        parentRect->xPos.addRelPosChild(&xPos);
+        parentRect->width.addRelPosChild(&xPos);
+        parentRect->yPos.addRelPosChild(&yPos);
+        parentRect->height.addRelPosChild(&yPos);
         return;
     }
 
-    if (parentAttrType == RelAttrType::POS) {
-        if (childAttrType == RelAttrType::POS) {
-            parentRect->xPos.addRelPosChild(&xPos);
-            parentRect->yPos.addRelPosChild(&yPos);
-            parentRect->width.addRelPosChild(&xPos);
-            parentRect->height.addRelPosChild(&yPos);
-        } else if (childAttrType == RelAttrType::X_POS) {
-            parentRect->xPos.addRelPosChild(&xPos);
-            parentRect->width.addRelPosChild(&xPos);
-        } else if (childAttrType == RelAttrType::Y_POS) {
-            parentRect->yPos.addRelPosChild(&yPos);
-            parentRect->height.addRelPosChild(&yPos);
-        }
+    // Child's specific position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::X_POS && parentAttrType == RelAttrType::X_POS) {
+        parentRect->xPos.addRelPosChild(&xPos);
+        parentRect->width.addRelPosChild(&xPos);
+        return;
     }
 
-    if (parentAttrType == RelAttrType::SIZE) {
-        if (childAttrType == RelAttrType::SIZE) {
-            parentRect->width.addRelSizeChild(&width);
-            parentRect->height.addRelSizeChild(&height);
-        } else if (childAttrType == RelAttrType::WIDTH) {
-            parentRect->width.addRelSizeChild(&width);
-        } else if (childAttrType == RelAttrType::HEIGHT) {
-            parentRect->height.addRelSizeChild(&height);
-        }
+    if (childAttrType == RelAttrType::Y_POS && parentAttrType == RelAttrType::Y_POS) {
+        parentRect->yPos.addRelPosChild(&yPos);
+        parentRect->height.addRelPosChild(&yPos);
+        return;
     }
 
-    if (parentAttrType == RelAttrType::RADIUS) {
-        if (childAttrType == RelAttrType::RADIUS) {
-            parentRect->cornerRadiusWidth.addRelSizeChild(&cornerRadiusWidth);
-            parentRect->cornerRadiusHeight.addRelSizeChild(&cornerRadiusHeight);
-        }
+    // Child's specific position attribute bound to inverted parent's specific position attribute
+    if (childAttrType == RelAttrType::X_POS && parentAttrType == RelAttrType::Y_POS) {
+        parentRect->yPos.addRelPosChild(&xPos);
+        parentRect->height.addRelPosChild(&xPos);
+        return;
+    }
+
+    if (childAttrType == RelAttrType::Y_POS && parentAttrType == RelAttrType::X_POS) {
+        parentRect->xPos.addRelPosChild(&yPos);
+        parentRect->width.addRelPosChild(&yPos);
+        return;
+    }
+
+    // Child's general position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::POS && parentAttrType == RelAttrType::X_POS) {
+        parentRect->xPos.addRelPosChild(&xPos);
+        parentRect->width.addRelPosChild(&xPos);
+        parentRect->yPos.addRelPosChild(&yPos);
+        parentRect->height.addRelPosChild(&yPos);
+    } else if (childAttrType == RelAttrType::POS && parentAttrType == RelAttrType::Y_POS) {
+        parentRect->yPos.addRelPosChild(&xPos);
+        parentRect->height.addRelPosChild(&xPos);
+        parentRect->yPos.addRelPosChild(&yPos);
+        parentRect->height.addRelPosChild(&yPos);
+    }
+
+    // Size Attributes
+
+    // Child's general position attribute bound to parent's general position attribute
+    if (childAttrType == RelAttrType::SIZE && parentAttrType == RelAttrType::SIZE) {
+        parentRect->width.addRelSizeChild(&width);
+        parentRect->height.addRelSizeChild(&height);
+        return;
+    }
+
+    // Child's specific position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::WIDTH && parentAttrType == RelAttrType::WIDTH) {
+        parentRect->width.addRelSizeChild(&width);
+        return;
+    }
+
+    if (childAttrType == RelAttrType::HEIGHT && parentAttrType == RelAttrType::HEIGHT) {
+        parentRect->height.addRelSizeChild(&height);
+        return;
+    }
+
+    // Child's specific position attribute bound to inverted parent's specific position attribute
+    if (childAttrType == RelAttrType::WIDTH && parentAttrType == RelAttrType::HEIGHT) {
+        parentRect->height.addRelSizeChild(&width);
+        return;
+    }
+
+    if (childAttrType == RelAttrType::HEIGHT && parentAttrType == RelAttrType::WIDTH) {
+        parentRect->width.addRelSizeChild(&height);
+        return;
+    }
+
+    // Child's general position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::SIZE && parentAttrType == RelAttrType::WIDTH) {
+        parentRect->width.addRelSizeChild(&width);
+        parentRect->width.addRelSizeChild(&height);
+    } else if (childAttrType == RelAttrType::SIZE && parentAttrType == RelAttrType::HEIGHT) {
+        parentRect->height.addRelSizeChild(&width);
+        parentRect->height.addRelSizeChild(&height);
+    }
+
+
+    // Radius Attributes
+
+    // Child's general radius attribute bound to parent's general radius attribute
+    if (parentAttrType == RelAttrType::RADIUS && childAttrType == RelAttrType::RADIUS) {
+        parentRect->cornerRadiusWidth.addRelSizeChild(&cornerRadiusWidth);
+        parentRect->cornerRadiusHeight.addRelSizeChild(&cornerRadiusHeight);
+        return;
+    }
+}
+
+void Rect::unbindRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType) {
+    if (!parentRect) return;
+
+    if (!RelAttr::isBindable(parentAttrType, childAttrType)) {
+        throw std::runtime_error("Rect ERROR: Attempted to unbind an invalid combination of attributes");
+    }
+
+    // Position Attributes
+
+    // Child's general position attribute bound to parent's general position attribute
+    if (childAttrType == RelAttrType::POS && parentAttrType == RelAttrType::POS) {
+        parentRect->xPos.removeRelPosChild(&xPos);
+        parentRect->width.removeRelPosChild(&xPos);
+        parentRect->yPos.removeRelPosChild(&yPos);
+        parentRect->height.removeRelPosChild(&yPos);
+        return;
+    }
+
+    // Child's specific position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::X_POS && parentAttrType == RelAttrType::X_POS) {
+        parentRect->xPos.removeRelPosChild(&xPos);
+        parentRect->width.removeRelPosChild(&xPos);
+        return;
+    }
+
+    if (childAttrType == RelAttrType::Y_POS && parentAttrType == RelAttrType::Y_POS) {
+        parentRect->yPos.removeRelPosChild(&yPos);
+        parentRect->height.removeRelPosChild(&yPos);
+        return;
+    }
+
+    // Child's specific position attribute bound to inverted parent's specific position attribute
+    if (childAttrType == RelAttrType::X_POS && parentAttrType == RelAttrType::Y_POS) {
+        parentRect->yPos.removeRelPosChild(&xPos);
+        parentRect->height.removeRelPosChild(&xPos);
+        return;
+    }
+
+    if (childAttrType == RelAttrType::Y_POS && parentAttrType == RelAttrType::X_POS) {
+        parentRect->xPos.removeRelPosChild(&yPos);
+        parentRect->width.removeRelPosChild(&yPos);
+        return;
+    }
+
+    // Child's general position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::POS && parentAttrType == RelAttrType::X_POS) {
+        parentRect->xPos.removeRelPosChild(&xPos);
+        parentRect->width.removeRelPosChild(&xPos);
+        parentRect->yPos.removeRelPosChild(&yPos);
+        parentRect->height.removeRelPosChild(&yPos);
+    } else if (childAttrType == RelAttrType::POS && parentAttrType == RelAttrType::Y_POS) {
+        parentRect->yPos.removeRelPosChild(&xPos);
+        parentRect->height.removeRelPosChild(&xPos);
+        parentRect->yPos.removeRelPosChild(&yPos);
+        parentRect->height.removeRelPosChild(&yPos);
+    }
+
+    // Size Attributes
+
+    // Child's general position attribute bound to parent's general position attribute
+    if (childAttrType == RelAttrType::SIZE && parentAttrType == RelAttrType::SIZE) {
+        parentRect->width.removeRelSizeChild(&width);
+        parentRect->height.removeRelSizeChild(&height);
+        return;
+    }
+
+    // Child's specific position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::WIDTH && parentAttrType == RelAttrType::WIDTH) {
+        parentRect->width.removeRelSizeChild(&width);
+        return;
+    }
+
+    if (childAttrType == RelAttrType::HEIGHT && parentAttrType == RelAttrType::HEIGHT) {
+        parentRect->height.removeRelSizeChild(&height);
+        return;
+    }
+
+    // Child's specific position attribute bound to inverted parent's specific position attribute
+    if (childAttrType == RelAttrType::WIDTH && parentAttrType == RelAttrType::HEIGHT) {
+        parentRect->height.removeRelSizeChild(&width);
+        return;
+    }
+
+    if (childAttrType == RelAttrType::HEIGHT && parentAttrType == RelAttrType::WIDTH) {
+        parentRect->width.removeRelSizeChild(&height);
+        return;
+    }
+
+    // Child's general position attribute bound to parent's specific position attribute
+    if (childAttrType == RelAttrType::SIZE && parentAttrType == RelAttrType::WIDTH) {
+        parentRect->width.removeRelSizeChild(&width);
+        parentRect->width.removeRelSizeChild(&height);
+    } else if (childAttrType == RelAttrType::SIZE && parentAttrType == RelAttrType::HEIGHT) {
+        parentRect->height.removeRelSizeChild(&width);
+        parentRect->height.removeRelSizeChild(&height);
+    }
+
+
+    // Radius Attributes
+
+    // Child's general radius attribute bound to parent's general radius attribute
+    if (parentAttrType == RelAttrType::RADIUS && childAttrType == RelAttrType::RADIUS) {
+        parentRect->cornerRadiusWidth.removeRelSizeChild(&cornerRadiusWidth);
+        parentRect->cornerRadiusHeight.removeRelSizeChild(&cornerRadiusHeight);
+        return;
     }
 }

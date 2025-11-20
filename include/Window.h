@@ -73,6 +73,9 @@ public:
     void handleMouseButton(int action, MouseButtonType type);
     void handleResize(float width, float height);
     void handleReposition(float x, float y);
+
+    // User-defined render callback
+    std::function<void()> onRender;
 private:
     static void keyCallback(GLFWwindow *window,
                             int key, int scancode, int action, int mods);

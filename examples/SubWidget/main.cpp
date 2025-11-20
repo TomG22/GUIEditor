@@ -6,13 +6,11 @@ int main() {
     float width = 1440.0f;
     float height = 700.0f;
 
+    // Create a window
     Window* window = winManager.createWindow(static_cast<int>(width),
             static_cast<int>(height));
     window->maximize();
     window->setBGColor({ 1.0f, 1.0f, 1.0f, 1.0f });
-
-    float xPos = winManager.screenWidth / 2.0f - width / 2.0f;
-    float yPos = winManager.screenHeight / 2.0f - height / 2.0f;
 
     // Create widgetA
     Widget* widgetA = window->makeWidget();

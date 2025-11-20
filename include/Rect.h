@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "GuiTypes.h"
+#include "RelAttr.h"
 #include "RelPosAttr.h"
 #include "RelSizeAttr.h"
 
@@ -35,6 +36,7 @@ public:
     void applyTransform(TransformType transformState, float x, float y, float dx, float dy);
 
     void bindRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType);
+    void unbindRelTo(Rect* parentRect, RelAttrType parentAttrType, RelAttrType childAttrType);
 
 //private:
     RelPosAttr xPos, yPos;

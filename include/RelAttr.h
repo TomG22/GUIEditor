@@ -8,6 +8,8 @@ class RelAttr {
 public:
     RelAttr();
 
+    static bool isBindable(RelAttrType parentAttrType, RelAttrType childAttrType);
+
     virtual bool isRelBound() const = 0;
     virtual void setAbsValue(float newAbsValue) = 0;
     virtual void setSizeScale(float newAbsValue) = 0;

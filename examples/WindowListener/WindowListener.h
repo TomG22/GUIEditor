@@ -2,9 +2,9 @@
 
 #include <GuiListener.h>
 
-class WindowListenerEx : public GuiListener {
+class WindowListener : public GuiListener {
 public:
-    WindowListenerEx();
+    WindowListener();
     void handleKeyDown(KeyName key, std::vector<ModKeyName> mods) override;
     void handleKeyUp(KeyName key, std::vector<ModKeyName> mods) override;
 

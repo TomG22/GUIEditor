@@ -14,14 +14,6 @@ enum RelAttrType {
     HEIGHT
 };
 
-enum RelType {
-    ABSOLUTE,
-    REL_PARENT,
-    REL_SELF,
-    REL_SCREEN,
-    REL_WINDOW
-};
-
 enum TransformType {
     IDLE,
     MOVE,
