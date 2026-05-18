@@ -1,21 +1,14 @@
-PROJ_NAME := GUIEditor
-LIBRARY := ../build/Debug/$(PROJ_NAME).lib
-
-### User-facing target ###
 build:
 	cmd.exe /C "build.bat build"
 
 configure:
 	cmd.exe /C "build.bat configure"
 
-### Rebuild from scratch ###
 rebuild: 
 	cmd.exe /C "build.bat clean"
 	cmd.exe /C "build.bat configure"
 	cmd.exe /C "build.bat build"
 
-
-### Clean ###
 clean:
 	cmd.exe /C "build.bat clean"
 

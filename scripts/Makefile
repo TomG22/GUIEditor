@@ -1,4 +1,3 @@
-PROJ_NAME := GUIEditor
 ROOT_DIR :=	..
 BUILD_DIR := $(ROOT_DIR)/build
 TOOLCHAIN_FILE := $(ROOT_DIR)/toolchain.cmake
