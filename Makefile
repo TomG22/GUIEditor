@@ -19,7 +19,7 @@ ifdef BUILD_EXAMPLES
 endif
 
 ifdef GENERATOR
-    CMAKE_ARGS += -DCMAKE_GENERATOR=$(GENERATOR)
+    CMAKE_ARGS += -G $(GENERATOR)
 endif
 
 ifdef TOOLCHAIN
@@ -30,13 +30,21 @@ endif
 .DEFAULT_GOAL := build
 
 
-build: $(BUILD_DIR)/CMakeCache.txt
-	cmake --build $(BUILD_DIR)
-
-
-$(BUILD_DIR)/CMakeCache.txt: CMakeLists.txt $(TOOLCHAIN) Makefile
+$(BUILD_DIR)/.cmake_args: .cmake_args_check
 	cmake -E make_directory $(BUILD_DIR)
+	@echo "$(CMAKE_ARGS)" > $(BUILD_DIR)/.cmake_args.tmp
+	cmake -E compare_files $(BUILD_DIR)/.cmake_args.tmp $(BUILD_DIR)/.cmake_args || \
+		cmake -E copy $(BUILD_DIR)/.cmake_args.tmp $(BUILD_DIR)/.cmake_args
+	cmake -E remove $(BUILD_DIR)/.cmake_args.tmp
+
+
+$(BUILD_DIR)/.cmake_stamp: CMakeLists.txt $(TOOLCHAIN) $(BUILD_DIR)/.cmake_args Makefile
 	cmake $(CMAKE_ARGS)
+	cmake -E touch $@
+
+
+build: $(BUILD_DIR)/.cmake_stamp
+	cmake --build $(BUILD_DIR)
 
 
 rebuild:
@@ -48,4 +56,4 @@ clean:
 	cmake -E remove_directory $(BUILD_DIR)
 
 
-.PHONY: build rebuild clean
+.PHONY: build rebuild clean .cmake_args_check
