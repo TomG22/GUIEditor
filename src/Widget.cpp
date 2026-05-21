@@ -26,7 +26,7 @@ Widget::Widget(Rect& windowLayout)
       windowLayout(windowLayout)
 {
     layout = new Rect();
-    bgShader = new Shader("../res/shaders/2DVertexColor.shader");
+    bgShader = new Shader("res/shaders/2DVertexColor.shader");
 
     setResizable();
     setMoveable();
