@@ -2,9 +2,30 @@ cmake_minimum_required(VERSION 3.10)
 
 project(GUIEditor)
 
-# Fetch the glfw dependency
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+
+# Disable example programs by default
+option(BUILD_EXAMPLES "Build example programs" OFF)
+
+
+# Exposes compilation database to LSPs / linters / analysis tools
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES OFF)
+
+
+# Remove extra GLFW overhead
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+
 include(FetchContent)
 
+# Fetch the glfw dependency
 FetchContent_Declare(
     glfw
     URL https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip
@@ -12,9 +33,8 @@ FetchContent_Declare(
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
-FetchContent_Populate(glfw)
+FetchContent_MakeAvailable(glfw)
 
-add_subdirectory(${glfw_SOURCE_DIR})
 
 # Fetch the freetype dependency
 #FetchContent_Declare(
@@ -24,9 +44,7 @@ add_subdirectory(${glfw_SOURCE_DIR})
 #    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 #)
 
-#FetchContent_Populate(freetype)
-
-#add_subdirectory(${freetype_SOURCE_DIR})
+#FetchContent_MakeAvailable(freetype)
 
 
 add_library(${PROJECT_NAME}
@@ -51,11 +69,12 @@ add_library(${PROJECT_NAME}
 
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/dependencies
-    ${CMAKE_SOURCE_DIR}/dependencies/glad/include
+    include
+    dependencies
+    dependencies/glad/include
 
     ${glfw_SOURCE_DIR}/include
+
     #${freetype_SOURCE_DIR}/include
 )
 
@@ -68,6 +87,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     #freetype
     OpenGL::GL
 )
+
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
