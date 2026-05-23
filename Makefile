@@ -7,7 +7,7 @@ WAYLAND ?= OFF
 
 
 ifeq ($(TARGET),windows)
-    TOOLCHAIN := toolchains/windows-mingw.cmake
+    TOOLCHAIN := windows-mingw.cmake
 endif
 
 
