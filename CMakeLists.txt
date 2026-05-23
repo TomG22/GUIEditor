@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Set the OGL packaging to modern packaging
+set(OpenGL_GL_PREFERENCE "GLVND")
+
 project(GUIEditor)
 
 # Set C++ standard
