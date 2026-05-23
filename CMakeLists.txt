@@ -11,6 +11,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
+# Set CMake to use static linking
+set(CMAKE_EXE_LINKER_FLAGS
+    "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+
 # Disable example programs by default
 option(BUILD_EXAMPLES "Build example programs" OFF)
 
