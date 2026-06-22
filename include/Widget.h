@@ -2,12 +2,11 @@
 
 #include <vector>
 #include <glm/glm.hpp>
-#include <unordered_map>
 
 #include "GuiListener.h"
 #include "GuiTypes.h"
 #include "Mesh.h"
-#include "Rect.h"
+#include "Layout.h"
 #include "Shader.h"
 
 class Window;
@@ -16,29 +15,30 @@ class Widget : public GuiListener {
 public:
     std::vector<Widget*> subWidgets;
 
-    Rect& windowLayout;
-    Rect* layout;
-    int zIndex;
-    bool lockZIndex;
+    Layout& windowLayout;
+    Layout layout;
+    Layout* boundParentLayout = nullptr;
 
-    Mesh* bgMesh;
-
-    Shader* bgShader;
+    Mesh* bgMesh = nullptr;
+    Shader* bgShader = nullptr;
     glm::vec4 bgColor;
 
-    TransformType transformState;
-    bool canMove;
-    bool canResizeTop;
-    bool canResizeLeft;
-    bool canResizeBottom;
-    bool canResizeRight;
+    int zIndex = 0;
+    bool lockZIndex = true;
 
-    bool hoverTips;
-    TransformType hoverState;
+    TransformType transformState = TransformType::IDLE;
+    bool canMove = false;
+    bool canResizeTop = false;
+    bool canResizeLeft = false;
+    bool canResizeBottom = false;
+    bool canResizeRight = false;
 
-    float cursorX, cursorY;
+    bool hoverTips = false;
+    TransformType hoverState = TransformType::IDLE;
 
-    Widget(Rect& windowLayout);
+    float cursorX = 0.0f, cursorY = 0.0f;
+
+    Widget(Layout& windowLayout);
 
     // Internal event handlers
     void handleKeyDown(KeyName key, std::vector<ModKeyName> mods) override;
@@ -53,12 +53,28 @@ public:
 
     Widget* makeSubWidget();
 
-    static Widget* hitTest(const std::vector<Widget*>& widgets, float x, float y);
 
     // Background methods
+    void bindParentLayout(Layout* newParentLayout);
+    void unbindParentLayout();
+    void markChildrenDirty();
+
+    void setXPos(float x);
+    void setYPos(float y);
     void setPos(float x, float y);
-    void setSize(float width, float height);
-    void setCornerRadius(float radius);
+    void setWidth(float w);
+    void setHeight(float h);
+    void setSize(float w, float h);
+
+    void setAbsXPos(float x);
+    void setAbsYPos(float y);
+    void setAbsPos(float x, float y);
+    void setAbsWidth(float w);
+    void setAbsHeight(float h);
+    void setAbsSize(float w, float h);
+    //void setCornerRadii(float radius);
+    static Widget* hitTest(const std::vector<Widget*>& widgets, float x, float y);
+    void applyTransform(TransformType transformState, float x, float y, float dx, float dy);
 
     void updateBGMesh();
     void updateBGShader();

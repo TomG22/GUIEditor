@@ -1,5 +1,7 @@
 #include "RelPosAttr.h"
 #include "RelSizeAttr.h"
+#include "glm/common.hpp"
+#include <stdio.h>
 
 RelPosAttr::RelPosAttr()
     : relPosParent(nullptr),
@@ -14,17 +16,16 @@ void RelPosAttr::setAbsValue(float newAbsValue) {
     absValue = newAbsValue;
 
     calcSizeScale();
-    calcAbsValue();
+
+    for (RelPosAttr* relPosChild : relPosChildren) {
+        relPosChild->calcAbsValue();
+    }
 }
 
 void RelPosAttr::setSizeScale(float newSizeScale) {
     sizeScale = newSizeScale;
 
     calcAbsValue();
-
-    for (RelPosAttr* relPosChild : relPosChildren) {
-        relPosChild->calcAbsValue();
-    }
 }
 
 void RelPosAttr::setRelPosParent(RelPosAttr* posAttr) {
@@ -57,7 +58,10 @@ void RelPosAttr::removeRelPosChild(RelPosAttr* posAttr) {
 
 void RelPosAttr::calcAbsValue() {
     if (isRelBound()) {
-        absValue = relPosParent->getAbsValue() + relSizeParent->getAbsValue() * sizeScale;
+        printf("absval: %f = relPos: %f + relSize %f * sizeScale: %f\n", relPosParent->getAbsValue() + relSizeParent->getAbsValue() * sizeScale,
+                relPosParent->getAbsValue(), relSizeParent->getAbsValue(), sizeScale);
+        if (parentLayout)
+            absValue = relPosParent->getAbsValue() + relSizeParent->getAbsValue() * sizeScale;
     }
 
     for (RelPosAttr* relPosChild : relPosChildren) {

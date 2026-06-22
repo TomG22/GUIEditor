@@ -1,5 +1,5 @@
 #include <iostream>
-#include <glad/glad.h>
+#include "OpenGL.h"
 
 #define ASSERT(x) if (!(x))(printf("GLCall ASSERT failed\n"));
 #define GLCall(x) x; ASSERT(GLLogCall(#x, __FILE__, __LINE__));

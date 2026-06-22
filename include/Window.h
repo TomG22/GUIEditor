@@ -1,39 +1,34 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
 #include <unordered_map>
 #include <vector>
 
 #include <functional>
-#include <queue>
-#include <mutex>
-#include <utility>
 
-#include "Rect.h"
+#include "GuiTypes.h"
+#include "Layout.h"
 #include "GuiListener.h"
 #include "Renderer.h"
-#include "Shader.h"
 #include "Widget.h"
 
 class Window {
 public:
-    GLFWwindow* window;
-    GLFWcursor* arrowCursor, *resizeAllCursor;
-    GLFWcursor* resizeHCursor, *resizeVCursor;
-    GLFWcursor* resizeNESWCursor, *resizeNWSECursor;
+    GLFWwindow* window = nullptr;
+    GLFWcursor* arrowCursor = nullptr, *resizeAllCursor = nullptr;
+    GLFWcursor* resizeHCursor = nullptr, *resizeVCursor = nullptr;
+    GLFWcursor* resizeNESWCursor = nullptr, *resizeNWSECursor = nullptr;
 
-    TransformType cursorState;
-    TransformType nextCursorState;
+    TransformType cursorState = TransformType::IDLE;
+    TransformType nextCursorState = TransformType::IDLE;
 
-    Widget* focusedWidget;
-    Widget* hitWidget;
-    Widget* hoveredWidget;
+    Widget* focusedWidget = nullptr;
+    Widget* hitWidget = nullptr;
+    Widget* hoveredWidget = nullptr;
 
-    Renderer* renderer;
+    Renderer* renderer = nullptr;
 
-    Rect layout;
+    Layout layout;
 
     glm::vec4 bgColor;
 
@@ -45,8 +40,14 @@ public:
     Window(float width, float height);
     ~Window();
 
+    void markWidgetsDirty();
+
+    void setXPos(float x);
+    void setYPos(float y);
     void setPos(float x, float y);
-    void setSize(float width, float height);
+    void setWidth(float w);
+    void setHeight(float h);
+    void setSize(float w, float h);
 
     Widget* makeWidget();
     void addWidget(Widget* widget);

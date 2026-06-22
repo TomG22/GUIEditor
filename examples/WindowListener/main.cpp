@@ -67,11 +67,11 @@ int main(int argc, char* argv[]) {
 
         // Make a square widget whose width is half of the height of the window
         Widget* widget = window->makeWidget();
-        widget->layout->bindRelTo(&window->layout, RelAttrType::HEIGHT, RelAttrType::SIZE);
+        widget->bindParentLayout(&window->layout);
         widget->setSize(0.25, 0.25);
-        widget->layout->unbindRelTo(&window->layout, RelAttrType::HEIGHT, RelAttrType::SIZE);
+        widget->unbindParentLayout();
 
-        widget->setPos(winWidth / 2 - widget->layout->width.getAbsValue() / 2, winHeight / 2 - widget->layout->width.getAbsValue() / 2);
+        widget->setPos(winWidth / 2 - widget->layout.getAbsWidth() / 2, winHeight / 2 - widget->layout.getAbsWidth() / 2);
 
         InputState* input = new InputState();
 
@@ -80,16 +80,16 @@ int main(int argc, char* argv[]) {
         // On every frame update, move the widget based on the input state
         window->onRender = [widget, delta, input]() {
             if (input->up) {
-                widget->setPos(widget->layout->xPos.getAbsValue(), widget->layout->yPos.getAbsValue() - delta);
+                widget->setPos(widget->layout.getAbsXPos(), widget->layout.getAbsYPos() - delta);
             }
             if (input->down) {
-                widget->setPos(widget->layout->xPos.getAbsValue(), widget->layout->yPos.getAbsValue() + delta);
+                widget->setPos(widget->layout.getAbsXPos(), widget->layout.getAbsYPos() + delta);
             }
             if (input->left) {
-                widget->setPos(widget->layout->xPos.getAbsValue() - delta, widget->layout->yPos.getAbsValue());
+                widget->setPos(widget->layout.getAbsXPos() - delta, widget->layout.getAbsYPos());
             }
             if (input->right) {
-                widget->setPos(widget->layout->xPos.getAbsValue() + delta, widget->layout->yPos.getAbsValue());
+                widget->setPos(widget->layout.getAbsXPos() + delta, widget->layout.getAbsYPos());
             }
         };
 

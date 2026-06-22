@@ -49,7 +49,8 @@ void WindowManager::initGLFW() {
 }
 
 Window* WindowManager::createWindow(int width, int height) {
-    assert(width >= 0 && height >= 0);
+    assert(width >= 0 && height >= 0 &&
+           "WindowManager ERROR: Attempted to create a window with a width or height less than 0");
 
     Window* window = new Window(static_cast<float>(width),
                                 static_cast<float>(height));

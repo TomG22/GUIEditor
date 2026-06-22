@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <type_traits>
 #include <vector>
 
 #include "GuiTypes.h"
@@ -41,18 +42,18 @@ public:
     std::function<void(float x, float y, MouseButtonType type)> onMouseDown;
     std::function<void(float x, float y, MouseButtonType type)> onMouseUp;
 
-    int id;
+    int id = 0;
 
     // Flags for if events are registered for listening
-    bool regKeyDown;
-    bool regKeyUp;
+    bool regKeyDown = false;
+    bool regKeyUp = false;
 
-    bool regMouseMove;
-    bool regMouseHover;
-    bool regMouseEnter;
-    bool regMouseLeave;
-    bool regMouseDown;
-    bool regMouseUp;
+    bool regMouseMove = false;
+    bool regMouseHover = false;
+    bool regMouseEnter = false;
+    bool regMouseLeave = false;
+    bool regMouseDown = false;
+    bool regMouseUp = false;
 
     std::vector<GuiListener*> listeners;    // Sub-listeners
 

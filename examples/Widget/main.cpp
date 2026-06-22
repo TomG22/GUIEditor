@@ -19,13 +19,9 @@ int main() {
     Widget* absWidget = window->makeWidget();
 
     absWidget->bgColor = {0.5f, 0.5f, 0.5f, 1.0f};
-
     absWidget->setSize(300.0f, 300.0f);
 
-    absWidget->layout->width.addRelSizeChild(&absWidget->layout->cornerRadiusWidth);
-    absWidget->layout->height.addRelSizeChild(&absWidget->layout->cornerRadiusHeight);
-
-    absWidget->setCornerRadius(0.5f);
+    //absWidget->setCornerRadius(0.5f);
 
     absWidget->showHoverTips();
     absWidget->lockZIndex = false;
@@ -36,15 +32,12 @@ int main() {
     relWidget->showHoverTips();
     relWidget->lockZIndex = false;
 
-    // Bind the widget's position to the window's position
-    relWidget->layout->bindRelTo(&window->layout, RelAttrType::POS, RelAttrType::POS);
+    // Bind the widget to the window
+    relWidget->bindParentLayout(&window->layout);
     relWidget->setPos(0.25f, 0.25f);
-
-    // Bind the widget's size to the window's size
-    relWidget->layout->bindRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
     relWidget->setSize(0.5f, 0.5f);
 
-    relWidget->setCornerRadius(20.0f);
+    //relWidget->setCornerRadius(20.0f);
 
     winManager.startEventLoop();
 

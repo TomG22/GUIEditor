@@ -1,5 +1,5 @@
-#include <iostream>
 #include <stack>
+#include <functional>
 #include <stdexcept>
 
 #include "GLDebug.h"
@@ -8,17 +8,12 @@
 #include "GLFWTypeConv.h"
 
 Window::Window(float width, float height)
-    : window(nullptr),
-      cursorState(TransformType::IDLE),
-      nextCursorState(TransformType::IDLE),
-      focusedWidget(nullptr),
-      hoveredWidget(nullptr),
-      hitWidget(nullptr),
+    : layout(LayoutType::WINDOW),
       bgColor(0.0f, 0.0f, 0.0f, 1.0f)
 {
     renderer = new Renderer();
 
-    layout.setSize(width, height);
+    layout.setAbsSize(width, height);
 
     initGLFWWindow();
 }
@@ -27,23 +22,65 @@ Window::~Window() {
     glfwDestroyWindow(window);
 }
 
-void Window::setPos(float x, float y) {
-    layout.setPos(x, y);
-
-    glfwSetWindowPos(window, static_cast<int>(layout.getXPos()),
-                             static_cast<int>(layout.getYPos()));
+void Window::markWidgetsDirty() {
+    for (Widget* widget : widgets) {
+        widget->layout.dirty = true;
+        widget->markChildrenDirty();
+    }
 }
 
-void Window::setSize(float width, float height) {
-    layout.setSize(width, height);
+void Window::setXPos(float x) {
+    layout.setAbsXPos(x);
 
-    glfwSetWindowSize(window, static_cast<int>(layout.getWidth()),
-                              static_cast<int>(layout.getHeight()));
+    glfwSetWindowPos(window, static_cast<int>(layout.getAbsXPos()),
+                             static_cast<int>(layout.getAbsYPos()));
 
+    markWidgetsDirty();
+}
 
-    for (Widget* widget : widgets) {
-        widget->updateBackground();
-    }
+void Window::setYPos(float y) {
+    layout.setAbsYPos(y);
+
+    glfwSetWindowPos(window, static_cast<int>(layout.getAbsXPos()),
+                             static_cast<int>(layout.getAbsYPos()));
+
+    markWidgetsDirty();
+}
+
+void Window::setPos(float x, float y) {
+    layout.setAbsPos(x, y);
+
+    glfwSetWindowPos(window, static_cast<int>(layout.getAbsXPos()),
+                             static_cast<int>(layout.getAbsYPos()));
+
+    markWidgetsDirty();
+}
+
+void Window::setWidth(float w) {
+    layout.setAbsWidth(w);
+
+    glfwSetWindowSize(window, static_cast<int>(layout.getAbsWidth()),
+                              static_cast<int>(layout.getAbsHeight()));
+
+    markWidgetsDirty();
+}
+
+void Window::setHeight(float h) {
+    layout.setAbsHeight(h);
+
+    glfwSetWindowSize(window, static_cast<int>(layout.getAbsWidth()),
+                              static_cast<int>(layout.getAbsHeight()));
+
+    markWidgetsDirty();
+}
+
+void Window::setSize(float w, float h) {
+    layout.setAbsSize(w, h);
+
+    glfwSetWindowSize(window, static_cast<int>(layout.getAbsWidth()),
+                              static_cast<int>(layout.getAbsHeight()));
+
+    markWidgetsDirty();
 }
 
 Widget* Window::makeWidget() {
@@ -136,8 +173,8 @@ void Window::moveBackward(Widget* widget) {
 void Window::initGLFWWindow() {
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 
-    window = glfwCreateWindow(static_cast<int>(layout.getWidth()),
-                              static_cast<int>(layout.getHeight()),
+    window = glfwCreateWindow(static_cast<int>(layout.getAbsWidth()),
+                              static_cast<int>(layout.getAbsHeight()),
                               "GLFW Window", nullptr, nullptr);
 
     // Check if window creation errors
@@ -147,8 +184,8 @@ void Window::initGLFWWindow() {
     }
 
     // Initialize the window's position
-    glfwSetWindowPos(window, static_cast<int>(layout.getXPos()),
-                             static_cast<int>(layout.getYPos()));
+    glfwSetWindowPos(window, static_cast<int>(layout.getAbsXPos()),
+                             static_cast<int>(layout.getAbsYPos()));
 
     // Set the current context to our window
     glfwMakeContextCurrent(window);
@@ -218,30 +255,43 @@ void Window::setBGColor(glm::vec4 color) {
 
 void Window::render() {
     glfwMakeContextCurrent(window);
-
-    if (onRender) {
-        onRender();
-    }
-
-
+    if (onRender) onRender();
     renderer->Clear();
 
     std::stack<Widget*> stack;
+    std::vector<Widget*> renderQueue;
 
-    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
+    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it)
         stack.push(*it);
-    }
 
     while (!stack.empty()) {
         Widget* current = stack.top();
         stack.pop();
 
-        renderer->Draw(*current->bgMesh, *current->bgShader);
+        renderQueue.push_back(current);
 
         for (auto it = current->subWidgets.rbegin(); it != current->subWidgets.rend(); ++it) {
             stack.push(*it);
         }
     }
+
+    // Layout Pass
+    if (layout.dirty) {
+        layout.recompute(nullptr);
+    }
+
+    for (Widget* widget : renderQueue) {
+        if (widget->layout.dirty) {
+            widget->layout.recompute(widget->boundParentLayout);
+            widget->updateBackground();
+        }
+    }
+
+    // Render Pass
+    for (Widget* widget : renderQueue) {
+        renderer->Draw(*widget->bgMesh, *widget->bgShader);
+    }
+
 
     if (cursorState != nextCursorState) {
         updateCursor(nextCursorState);
@@ -408,7 +458,9 @@ void Window::mouseButtonCallback(GLFWwindow* window,
 }
 
 void Window::handleReposition(float x, float y) {
-    layout.setPos(x, y);
+    layout.setAbsPos(x, y);
+
+    markWidgetsDirty();
 }
 
 void Window::windowPosCallback(GLFWwindow* window,
@@ -418,13 +470,11 @@ void Window::windowPosCallback(GLFWwindow* window,
 }
 
 void Window::handleResize(float width, float height) {
-    layout.setSize(width, height);
-
-    for (Widget* widget : widgets) {
-        widget->updateBackground();
-    }
+    layout.setAbsSize(width, height);
 
     GLCall(glViewport(0, 0, static_cast<int>(width), static_cast<int>(height)));
+
+    markWidgetsDirty();
 }
 
 void Window::framebufferSizeCallback(GLFWwindow* window,

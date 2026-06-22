@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 #include <vector>
+#include "OpenGL.h"
 
 struct Vertex2D {
     glm::vec2 position;

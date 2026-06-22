@@ -1,9 +1,7 @@
 #pragma once
 
-#include "GLFWTypeConv.h"
-#include <GLFW/glfw3.h>
 #include <vector>
-
+#include "OpenGL.h"
 #include "GuiTypes.h"
 
 KeyName convGLFWKey(int GLFWKey) {

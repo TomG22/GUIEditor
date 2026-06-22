@@ -15,6 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXE_LINKER_FLAGS
     "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
 
+
 # Disable example programs by default
 option(BUILD_EXAMPLES "Build example programs" OFF)
 
@@ -57,12 +58,9 @@ FetchContent_MakeAvailable(glfw)
 add_library(${PROJECT_NAME}
     src/GLDebug.cpp
     src/IndexBuffer.cpp
+    src/Layout.cpp
     src/Mesh.cpp
     src/Renderer.cpp
-    src/Rect.cpp
-    src/RelAttr.cpp
-    src/RelPosAttr.cpp
-    src/RelSizeAttr.cpp
     src/Shader.cpp
     src/VertexArray.cpp
     src/VertexBuffer.cpp
@@ -93,6 +91,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     glfw
     #freetype
     OpenGL::GL
+)
+
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    PROJECT_ROOT_PATH="${CMAKE_SOURCE_DIR}"
 )
 
 

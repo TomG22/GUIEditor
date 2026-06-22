@@ -3,8 +3,7 @@
 #include "Mesh.h"
 
 Mesh::Mesh(VertexArray* va, VertexBuffer* vb, IndexBuffer* ib)
-    : va(va), vb(vb), ib(ib) {
-}
+    : va(va), vb(vb), ib(ib) {}
 
 void Mesh::UpdateVertices(const void* data, unsigned int size, unsigned int offset) {
     vb->UpdateData(data, size, offset);

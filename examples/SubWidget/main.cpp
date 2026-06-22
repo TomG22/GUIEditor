@@ -16,8 +16,8 @@ int main() {
     Widget* widgetA = window->makeWidget();
     widgetA->bgColor = {1.0f, 0.0f, 0.0f, 0.5f};
 
-    // Bind widgetA's size to the window's size
-    widgetA->layout->bindRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    // Bind widgetA to the window 
+    widgetA->bindParentLayout(&window->layout);
     widgetA->setSize(1.0f, 0.5f);
     widgetA->showHoverTips();
 
@@ -26,12 +26,9 @@ int main() {
     subWidgetA->bgColor = {1.0f, 0.0f, 0.0f, 0.5f};
     subWidgetA->showHoverTips();
 
-    // Bind subWidgetA's size to widgetA's size
-    subWidgetA->layout->bindRelTo(widgetA->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    // Bind subWidgetA size to widgetA
+    subWidgetA->bindParentLayout(&widgetA->layout);
     subWidgetA->setSize(1.0f, 0.5f);
-
-    // Bind subWidgetA's pos to widgetA's position
-    subWidgetA->layout->bindRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
     subWidgetA->setPos(0.0f, 0.0f);
 
     // Create widgetB
@@ -39,11 +36,8 @@ int main() {
     widgetB->bgColor = {0.0f, 0.0f, 1.0f, 0.5f};
     widgetB->showHoverTips();
 
-    // Bind widgetB to widgetA's position
-    widgetB->layout->bindRelTo(widgetA->layout, RelAttrType::POS, RelAttrType::POS);
-
-    // Bind widgetB's size to the window's size
-    widgetB->layout->bindRelTo(&window->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    // Bind widgetB to widgetA 
+    widgetB->bindParentLayout(&widgetA->layout);
     widgetB->setSize(0.5f, 1.0f);
 
     // Create subWidgetB
@@ -51,12 +45,9 @@ int main() {
     subWidgetB->bgColor = {0.0f, 0.0f, 1.0f, 0.5f};
     subWidgetB->showHoverTips();
 
-    // Bind subWidgetB's size to widgetB's size
-    subWidgetB->layout->bindRelTo(widgetB->layout, RelAttrType::SIZE, RelAttrType::SIZE);
+    // Bind subWidgetB's size to widgetB
+    subWidgetB->bindParentLayout(&widgetB->layout);
     subWidgetB->setSize(0.5f, 1.0f);
-
-    // Bind subWidgetB's pos to widgetB's position
-    subWidgetB->layout->bindRelTo(widgetB->layout, RelAttrType::POS, RelAttrType::POS);
 
     winManager.startEventLoop();
 

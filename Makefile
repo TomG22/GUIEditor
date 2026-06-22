@@ -2,9 +2,9 @@ BUILD_DIR ?= build
 BUILD_EXAMPLES ?=
 BUILD_TYPE ?= Debug
 GENERATOR ?=
+OS ?= Windows
 TARGET ?=
 WAYLAND ?= OFF
-
 
 ifeq ($(TARGET),windows)
     TOOLCHAIN := windows-mingw.cmake

@@ -4,16 +4,6 @@ class CursorState {
     bool mouseDown;
 };
 
-enum RelAttrType {
-    POS,
-    X_POS,
-    Y_POS,
-    RADIUS,
-    SIZE,
-    WIDTH,
-    HEIGHT
-};
-
 enum TransformType {
     IDLE,
     MOVE,
