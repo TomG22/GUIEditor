@@ -10,7 +10,7 @@ Widget::Widget(Layout& windowLayout)
       bgColor(1.0f)
 {
     // TODO want this to be single shader object later
-    std::string shaderFile = "res\\shaders\\2DVertexColor.shader";
+    std::string shaderFile = "res/shaders/2DVertexColor.shader";
     bgShader = new Shader(shaderFile);
 
     float left = layout.getAbsXPos();
